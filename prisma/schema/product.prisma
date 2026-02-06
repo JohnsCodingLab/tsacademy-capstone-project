@@ -1,0 +1,10 @@
+model Product {
+    id         String   @id @default(uuid())
+    name       String
+    sku        String   @unique
+    price      Float
+    stockLevel Int      @default(0)
+    createdAt  DateTime @default(now())
+
+    movements StockMovement[]
+}
