@@ -1,33 +1,43 @@
-import jwt, { type SignOptions } from "jsonwebtoken";
-import { randomUUID } from "crypto";
-import bcrypt from "bcrypt";
 import { env } from "@/config/env.js";
-import { hashPassword } from "@/utils/password.js";
-import ms, { type StringValue } from "ms";
 import prisma from "@/config/prisma.js";
-import { AppError } from "@/utils/appError.js";
-import { Role } from "@/generated/prisma/index.js";
-import type { ValidatedUser } from "./auth.types.js";
 import { redis } from "@/config/redis.js";
+import { OrgRole, type OrgUser } from "@/generated/prisma/index.js";
 import { logger } from "@/libs/logger.js";
+import { AppError } from "@/utils/appError.js";
+import { comparePassword, hashPassword } from "@/utils/password.js";
+import { randomUUID } from "crypto";
+import jwt, { type SignOptions } from "jsonwebtoken";
+import ms, { type StringValue } from "ms";
+import type { ValidatedUser } from "../org-auth/orgAuth.types.js";
 
-export class TokenService {
-  // Generate access token
-  static generateAccessToken(userId: string, role: string): string {
-    const token = jwt.sign({ sub: userId, role }, env.JWT_SECRET, {
-      expiresIn: env.JWT_ACCESS_EXPIRATION,
-    } as SignOptions);
-
-    return token;
+export class OrgTokenService {
+  // Generate Org access token
+  static generateAccessToken(user: OrgUser) {
+    return jwt.sign(
+      {
+        sub: user.id,
+        orgId: user.organizationId,
+        role: user.role,
+        type: "ORG",
+      },
+      env.ORG_JWT_SECRET,
+      { expiresIn: env.JWT_ACCESS_EXPIRATION } as SignOptions,
+    );
   }
 
   //   Generate refresh token
-  static generateRefreshToken(userId: string, role: string) {
+  static generateRefreshToken(user: OrgUser) {
     const jti = randomUUID();
 
     const refreshToken = jwt.sign(
-      { sub: userId, role, jti },
-      env.JWT_REFRESH_SECRET,
+      {
+        sub: user.id,
+        orgId: user.organizationId,
+        role: user.role,
+        type: "ORG",
+        jti,
+      },
+      env.ORG_JWT_REFRESH_SECRET,
       {
         expiresIn: env.JWT_REFRESH_EXPIRATION,
       } as SignOptions,
@@ -39,7 +49,7 @@ export class TokenService {
   //   Save refresh token to db
   static async saveRefreshToken(
     token: string,
-    userId: string,
+    orgUserId: string,
     jti: string,
     meta?: { ipAddress?: string; userAgent?: string },
   ) {
@@ -53,13 +63,13 @@ export class TokenService {
         jti,
         tokenHash,
         expiresAt,
-        userId,
+        orgUserId,
         ...meta,
       },
     });
 
     logger.info(
-      { userId, jti, event: "REFRESH_TOKEN_ISSUED" },
+      { orgUserId, jti, event: "REFRESH_TOKEN_ISSUED" },
       "Refresh token saved",
     );
   }
@@ -67,7 +77,7 @@ export class TokenService {
   // verify access token
   static verifyAccessToken(token: string) {
     try {
-      const decoded = jwt.verify(token, env.JWT_SECRET) as any;
+      const decoded = jwt.verify(token, env.ORG_JWT_SECRET) as any;
 
       if (!decoded.sub || !decoded.role) {
         logger.warn(
@@ -90,7 +100,7 @@ export class TokenService {
   //   Verify Refresh Token
   static async verifyRefreshToken(token: string) {
     try {
-      const payload = jwt.verify(token, env.JWT_REFRESH_SECRET) as {
+      const payload = jwt.verify(token, env.ORG_JWT_REFRESH_SECRET) as {
         sub: string;
         jti: string;
       };
@@ -117,7 +127,7 @@ export class TokenService {
         throw new AppError("Refresh token revoked", 401);
       }
 
-      const valid = await bcrypt.compare(token, stored.tokenHash);
+      const valid = await comparePassword(token, stored.tokenHash);
       if (!valid) {
         throw new AppError("Invalid refresh token", 401);
       }
@@ -129,18 +139,18 @@ export class TokenService {
   }
 
   //   Revoke refresh Token
-  static async revokeRefreshToken(jti: string, userId?: string) {
+  static async revokeRefreshToken(jti: string, orgUserId?: string) {
     await redis.set(`bl_${jti}`, "revoked", "EX", 7 * 24 * 60 * 60);
     await prisma.refreshToken.delete({ where: { jti } });
     logger.info(
-      { userId, jti, event: "REFRESH_TOKEN_REVOKED" },
+      { orgUserId, jti, event: "REFRESH_TOKEN_REVOKED" },
       "Refresh token revoked",
     );
   }
 
   /** Revoke all refresh tokens for a user */
-  static async revokeAllUserTokens(userId: string) {
-    const tokens = await prisma.refreshToken.findMany({ where: { userId } });
+  static async revokeAllUserTokens(orgUserId: string) {
+    const tokens = await prisma.refreshToken.findMany({ where: { orgUserId } });
 
     const pipeline = redis.multi();
     tokens.forEach((t) =>
@@ -148,10 +158,10 @@ export class TokenService {
     );
     await pipeline.exec();
 
-    await prisma.refreshToken.deleteMany({ where: { userId } });
+    await prisma.refreshToken.deleteMany({ where: { orgUserId } });
 
     logger.info(
-      { userId, event: "ALL_REFRESH_TOKENS_REVOKED" },
+      { orgUserId, event: "ALL_REFRESH_TOKENS_REVOKED" },
       "All refresh tokens revoked for user",
     );
   }
@@ -164,8 +174,8 @@ export class TokenService {
       throw new AppError("Invalid token payload structure", 401);
     }
 
-    const roleValue = payload.role as Role;
-    if (!Object.values(Role).includes(roleValue)) {
+    const roleValue = payload.role as OrgRole;
+    if (!Object.values(OrgRole).includes(roleValue)) {
       throw new AppError("Token contains an unrecognized user role", 403);
     }
 

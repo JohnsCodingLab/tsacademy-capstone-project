@@ -1,7 +1,7 @@
 import type { Request, Response, NextFunction } from "express";
 import { asyncHandler } from "@/utils/asyncHandler.js";
 import { AppError } from "@/utils/appError.js";
-import { TokenService } from "@/module/auth/token.service.js";
+import { OrgTokenService } from "@/module/auth/token/orgToken.service.js";
 
 export const authenticate = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -12,8 +12,12 @@ export const authenticate = asyncHandler(
     }
 
     const token = authHeader.split(" ")[1];
-    const payload = TokenService.verifyAccessToken(token);
-    const user = TokenService.validatePayload(payload);
+    const payload = OrgTokenService.verifyAccessToken(token);
+    const user = OrgTokenService.validatePayload(payload);
+
+    if (payload.type !== "ORG") {
+      throw new AppError("Invalid token type", 403);
+    }
 
     // attach to request
     (req as any).user = user;

@@ -1,23 +1,28 @@
 import type { Request, Response } from "express";
-import type { LoginUserDTO, RegisterUserDTO } from "./auth.schema.js";
 import { asyncHandler } from "@/utils/asyncHandler.js";
-import { AuthService } from "./auth.service.js";
+import { OrgAuthService } from "./orgAuth.service.js";
+import type { LoginOrgUserDTO, RegisterOrgUserDTO } from "./orgAuth.schema.js";
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const { email, password, role } = req.body;
-  const user = await AuthService.register(req.body as RegisterUserDTO);
+  const user = await OrgAuthService.registerOrg(req.body as RegisterOrgUserDTO);
 
   res.status(201).json({
     status: "Registration successful",
-    data: user,
+    user: user,
   });
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
-  const result = await AuthService.login(req.body as LoginUserDTO, {
-    ipAddress: req.ip,
-    userAgent: req.headers["user-agent"],
-  });
+  const { orgSlug, email, password } = req.body;
+  const result = await OrgAuthService.login(
+    { email, password, orgSlug },
+    orgSlug,
+    {
+      ipAddress: req.ip,
+      userAgent: req.headers["user-agent"],
+    },
+  );
 
   res.cookie("refreshToken", result.tokens.refreshToken, {
     httpOnly: true,
@@ -29,6 +34,6 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   res.status(200).json({
     status: "login successful",
     user: result.user,
-    data: result.tokens.accessToken,
+    token: result.tokens.accessToken,
   });
 });

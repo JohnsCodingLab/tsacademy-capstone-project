@@ -7,7 +7,7 @@ import { env } from "./config/env.js";
 import { httpLogger } from "./middlewares/logger.middleware.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { AppError } from "./utils/appError.js";
-import authRouter from "./module/auth/auth.routes.js";
+import authRouter from "./module/auth/org-auth/orgAuth.routes.js";
 // import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app = express();

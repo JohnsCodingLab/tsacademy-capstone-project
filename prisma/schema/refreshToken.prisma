@@ -2,13 +2,15 @@ model RefreshToken {
     id        String   @id @default(uuid())
     jti       String   @unique
     tokenHash String
-    userId    String
     expiresAt DateTime
-    ipAddress String?
-    userAgent String?
+
+    orgUserId String
+    user      OrgUser @relation(fields: [orgUserId], references: [id])
+
     createdAt DateTime @default(now())
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    ipAddress String?
+    userAgent String?
 
-    @@index([userId])
+    @@index([orgUserId])
 }

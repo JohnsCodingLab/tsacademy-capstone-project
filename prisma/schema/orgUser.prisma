@@ -1,0 +1,33 @@
+model OrgUser {
+  id             String       @id @default(uuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  name     String
+  email    String
+  password String
+
+  role OrgRole @default(ORG_USER)
+
+  profileImageUrl String?
+
+  isActive  Boolean   @default(true)
+  revokedAt DateTime?
+
+  lastLogin DateTime?
+
+  refreshTokens RefreshToken[]
+  activities    UserActivity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, email])
+  @@index([organizationId])
+}
+
+enum OrgRole {
+  ORG_SUPER_ADMIN
+  ORG_ADMIN
+  ORG_USER
+}

@@ -1,9 +1,9 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "@/utils/appError.js";
-import { Role } from "@/generated/prisma/index.js";
+import type { OrgRole } from "@/generated/prisma/index.js";
 
-export const authorize =
-  (...allowedRoles: Role[]) =>
+export const authorizeOrg =
+  (...allowedRoles: OrgRole[]) =>
   (req: Request, _res: Response, next: NextFunction) => {
     const user = (req as any).user;
 

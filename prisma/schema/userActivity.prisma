@@ -1,0 +1,15 @@
+model UserActivity {
+    id        String  @id @default(uuid())
+    orgUserId String
+    user      OrgUser @relation(fields: [orgUserId], references: [id])
+
+    action    String
+    metadata  Json?
+    ipAddress String?
+    userAgent String?
+
+    createdAt DateTime @default(now())
+
+    @@index([orgUserId])
+    @@index([createdAt])
+}
