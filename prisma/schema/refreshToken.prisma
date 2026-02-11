@@ -1,4 +1,4 @@
-model RefreshToken {
+model OrgRefreshToken {
     id        String   @id @default(uuid())
     jti       String   @unique
     tokenHash String
@@ -13,4 +13,21 @@ model RefreshToken {
     userAgent String?
 
     @@index([orgUserId])
+}
+
+model SysRefreshToken {
+    id        String   @id @default(uuid())
+    jti       String   @unique
+    tokenHash String
+    expiresAt DateTime
+
+    sysUserId String
+    user      SystemUser @relation(fields: [sysUserId], references: [id])
+
+    createdAt DateTime @default(now())
+
+    ipAddress String?
+    userAgent String?
+
+    @@index([sysUserId])
 }

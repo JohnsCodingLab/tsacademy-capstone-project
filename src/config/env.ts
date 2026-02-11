@@ -20,6 +20,14 @@ const envSchema = z.object({
   ORG_JWT_REFRESH_SECRET: z
     .string()
     .min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
+
+  SYSTEM_JWT_SECRET: z
+    .string()
+    .min(32, "JWT_SECRET must be at least 32 characters"),
+  SYSTEM_JWT_REFRESH_SECRET: z
+    .string()
+    .min(32, "JWT_REFRESH_SECRET must be at least 32 characters"),
+
   JWT_ACCESS_EXPIRATION: z.string().default("15m"),
   JWT_REFRESH_EXPIRATION: z.string().default("7d"),
 

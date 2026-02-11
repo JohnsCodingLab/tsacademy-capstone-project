@@ -4,6 +4,8 @@ model SystemUser {
     password String
     role     SystemRole @default(SYSTEM_ADMIN)
 
+    refreshTokens SysRefreshToken[]
+
     isActive  Boolean   @default(true)
     lastLogin DateTime?
 

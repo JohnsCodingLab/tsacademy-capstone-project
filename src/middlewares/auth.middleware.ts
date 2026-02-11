@@ -1,7 +1,8 @@
 import type { Request, Response, NextFunction } from "express";
 import { asyncHandler } from "@/utils/asyncHandler.js";
 import { AppError } from "@/utils/appError.js";
-import { OrgTokenService } from "@/module/auth/token/orgToken.service.js";
+import { TokenService } from "@/module/auth/token/tokenService.js";
+import { logger } from "@/libs/logger.js";
 
 export const authenticate = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -12,16 +13,26 @@ export const authenticate = asyncHandler(
     }
 
     const token = authHeader.split(" ")[1];
-    const payload = OrgTokenService.verifyAccessToken(token);
-    const user = OrgTokenService.validatePayload(payload);
+    try {
+      const decoded = TokenService.decodeWithoutVerification(token);
 
-    if (payload.type !== "ORG") {
-      throw new AppError("Invalid token type", 403);
+      if (!decoded || !decoded?.type) {
+        throw new AppError("Invalid token format", 401);
+      }
+
+      const payload = TokenService.verifyAccessToken(token, decoded.type);
+
+      req.user = {
+        id: payload.sub,
+        role: payload.role,
+        type: payload.type,
+        orgId: payload.orgId, // Will be undefined for SYSTEM users
+      };
+
+      next();
+    } catch (error: any) {
+      logger.error({ error: error.message }, "Authentication Failed");
+      throw new AppError(error.message || "Invalid token", 401);
     }
-
-    // attach to request
-    (req as any).user = user;
-
-    next();
   },
 );

@@ -16,7 +16,7 @@ model OrgUser {
 
   lastLogin DateTime?
 
-  refreshTokens RefreshToken[]
+  refreshTokens OrgRefreshToken[]
   activities    UserActivity[]
 
   createdAt DateTime @default(now())

@@ -1,16 +1,15 @@
-import { type OrgUser } from "@/generated/prisma/index.js";
+import type { SystemUser } from "@/generated/prisma/index.js";
 import { TokenService } from "./tokenService.js";
 
-export class OrgTokenService {
+export class SysTokenService {
   static async issueTokens(
-    user: OrgUser,
-    meta?: { ipAddress?: string; userAgent?: string },
+    user: SystemUser,
+    meta?: { ipAddress: string; userAgent: string },
   ) {
     const payload = {
       sub: user.id,
       role: user.role,
-      orgId: user.organizationId,
-      type: "ORG" as const,
+      type: "SYSTEM" as const,
     };
 
     const accessToken = TokenService.generateAccessToken(payload);
@@ -20,7 +19,7 @@ export class OrgTokenService {
       token: refreshToken,
       userId: user.id,
       jti,
-      type: "ORG",
+      type: "SYSTEM",
       meta,
     });
 
@@ -28,10 +27,10 @@ export class OrgTokenService {
   }
 
   static async revokeToken(jti: string) {
-    return TokenService.revokeToken(jti, "ORG");
+    return TokenService.revokeToken(jti, "SYSTEM");
   }
 
   static async revokeAllTokens(userId: string) {
-    return TokenService.revokeToken(userId, "ORG");
+    return TokenService.revokeToken(userId, "SYSTEM");
   }
 }

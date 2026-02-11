@@ -83,7 +83,7 @@ export class OrgAuthService {
       data: { lastLogin: new Date() },
     });
 
-    const tokens = await this.issueTokens(user, meta);
+    const tokens = await OrgTokenService.issueTokens(user, meta);
 
     logger.info({ userId: user.id, event: "LOGIN" }, "User logged in");
     return { user: this.sanitize(user), tokens };
@@ -91,29 +91,17 @@ export class OrgAuthService {
 
   /** Logout single token */
   static async logout(userId: string, jti: string) {
-    await OrgTokenService.revokeRefreshToken(jti, userId);
+    await OrgTokenService.revokeToken(jti);
     logger.info({ userId, jti, event: "LOGOUT" }, "User logged out");
   }
 
   /** Logout all devices */
   static async logoutAll(userId: string) {
-    await OrgTokenService.revokeAllUserTokens(userId);
+    await OrgTokenService.revokeAllTokens(userId);
     logger.info(
       { userId, event: "LOGOUT_ALL" },
       "User logged out from all devices",
     );
-  }
-
-  private static async issueTokens(
-    user: OrgUser,
-    meta?: { ipAddress?: string; userAgent?: string },
-  ) {
-    const accessToken = OrgTokenService.generateAccessToken(user);
-    const { refreshToken, jti } = OrgTokenService.generateRefreshToken(user);
-
-    await OrgTokenService.saveRefreshToken(refreshToken, user.id, jti, meta);
-
-    return { accessToken, refreshToken };
   }
 
   private static sanitize(user: OrgUser): OrgUserResponseDTO {
