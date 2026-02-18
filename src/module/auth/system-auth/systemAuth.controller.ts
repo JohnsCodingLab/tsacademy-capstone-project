@@ -13,7 +13,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
-  const { orgSlug, email, password } = req.body;
+  const { email, password } = req.body;
   const result = await SysAuthService.login(
     { email, password },
     {
@@ -33,5 +33,29 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     status: "login successful",
     user: result.user,
     token: result.tokens.accessToken,
+  });
+});
+
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
+
+  await SysAuthService.logout(req.user!.id, refreshToken);
+
+  res.clearCookie("refreshToken");
+
+  res.status(200).json({
+    status: "success",
+    message: "Logged out successfully",
+  });
+});
+
+export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
+  await SysAuthService.logoutAll(req.user!.id);
+
+  res.clearCookie("refreshToken");
+
+  res.status(200).json({
+    status: "success",
+    message: "Logged out from all devices",
   });
 });

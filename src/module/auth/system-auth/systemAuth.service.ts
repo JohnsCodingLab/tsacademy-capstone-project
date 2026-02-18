@@ -9,6 +9,7 @@ import { AppError } from "@/utils/appError.js";
 import { comparePassword, hashPassword } from "@/utils/password.js";
 import { SysTokenService } from "../token/sysToken.service.js";
 import { logger } from "@/libs/logger.js";
+import { TokenService } from "../token/tokenService.js";
 
 export class SysAuthService {
   static async register(data: RegisterSystemUserDTO) {
@@ -57,9 +58,19 @@ export class SysAuthService {
   }
 
   /** Logout single token */
-  static async logout(userId: string, jti: string) {
-    await SysTokenService.revokeToken(jti);
-    logger.info({ userId, jti, event: "LOGOUT" }, "User logged out");
+  static async logout(userId: string, refreshToken: string) {
+    if (!refreshToken) throw new AppError("Refresh token required", 400);
+
+    const payload = await TokenService.verifyRefreshToken(refreshToken, "ORG");
+
+    if (payload.type !== "SYSTEM") {
+      throw new AppError("Invalid token type", 403);
+    }
+
+    if (!payload.jti) throw new AppError("Invalid jti", 403);
+
+    await SysTokenService.revokeToken(payload.jti);
+    logger.info({ userId, event: "LOGOUT" }, "User logged out");
   }
 
   /** Logout all devices */

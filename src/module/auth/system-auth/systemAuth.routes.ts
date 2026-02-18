@@ -5,11 +5,14 @@ import {
   systemLoginSchema,
   systemRegisterSchema,
 } from "./systemAuth.schema.js";
-import { login, register } from "./systemAuth.controller.js";
+import { login, logout, logoutAll, register } from "./systemAuth.controller.js";
+import { authenticate } from "@/middlewares/auth.middleware.js";
 
 const router = Router();
 
 router.post("/register-system-user", validate(systemRegisterSchema), register);
 router.post("/login", validate(systemLoginSchema), login);
+router.post("/logout", authenticate, logout);
+router.post("/logout-all", authenticate, logoutAll);
 
 export default router;

@@ -7,6 +7,7 @@ import type { OrgUser } from "@/generated/prisma/index.js";
 import type { OrgUserResponseDTO } from "./orgAuth.types.js";
 import slugify from "slugify";
 import { AppError } from "@/utils/appError.js";
+import { TokenService } from "../token/tokenService.js";
 
 export class OrgAuthService {
   // Register Organization
@@ -90,9 +91,19 @@ export class OrgAuthService {
   }
 
   /** Logout single token */
-  static async logout(userId: string, jti: string) {
-    await OrgTokenService.revokeToken(jti);
-    logger.info({ userId, jti, event: "LOGOUT" }, "User logged out");
+  static async logout(userId: string, refreshToken: string) {
+    if (!refreshToken) throw new AppError("Refresh token required", 400);
+
+    const payload = await TokenService.verifyRefreshToken(refreshToken, "ORG");
+
+    if (payload.type !== "ORG") {
+      throw new AppError("Invalid token type", 403);
+    }
+
+    if (!payload.jti) throw new AppError("Invalid jti", 403);
+
+    await OrgTokenService.revokeToken(payload.jti);
+    logger.info({ userId, event: "LOGOUT" }, "User logged out");
   }
 
   /** Logout all devices */
