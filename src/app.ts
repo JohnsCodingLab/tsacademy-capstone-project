@@ -7,7 +7,8 @@ import { env } from "./config/env.js";
 import { httpLogger } from "./middlewares/logger.middleware.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { AppError } from "./utils/appError.js";
-import authRouter from "./module/auth/org-auth/orgAuth.routes.js";
+import orgAuthRouter from "./module/auth/org-auth/orgAuth.routes.js";
+import sysAuthRouter from "./module/auth/system-auth/systemAuth.routes.js";
 // import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app = express();
@@ -29,7 +30,8 @@ app.get("/health", (_, res) => {
   res.json({ status: "OK", uptime: process.uptime() });
 });
 
-app.use("/api/v1/auth", authRouter);
+app.use("/api/v1/org-auth", orgAuthRouter);
+app.use("/api/v1/sys-auth", sysAuthRouter);
 
 // 404 handler
 app.all("{/*path}", (req: Request, res: Response, next: NextFunction) => {

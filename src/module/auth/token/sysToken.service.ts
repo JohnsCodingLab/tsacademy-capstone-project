@@ -4,7 +4,7 @@ import { TokenService } from "./tokenService.js";
 export class SysTokenService {
   static async issueTokens(
     user: SystemUser,
-    meta?: { ipAddress: string; userAgent: string },
+    meta?: { ipAddress?: string; userAgent?: string },
   ) {
     const payload = {
       sub: user.id,

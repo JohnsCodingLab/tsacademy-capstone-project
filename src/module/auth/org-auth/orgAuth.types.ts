@@ -1,8 +1,4 @@
-import type {
-  Organization,
-  OrgRole,
-  UserActivity,
-} from "@/generated/prisma/index.js";
+import type { OrgRole } from "@/generated/prisma/index.js";
 
 export interface ValidatedUser {
   id: string;
