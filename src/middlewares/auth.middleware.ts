@@ -3,6 +3,7 @@ import { asyncHandler } from "@/utils/asyncHandler.js";
 import { AppError } from "@/utils/appError.js";
 import { TokenService } from "@/module/auth/token/tokenService.js";
 import { logger } from "@/libs/logger.js";
+import type { OrgRole } from "@/generated/prisma/index.js";
 
 export const authenticate = asyncHandler(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -22,12 +23,22 @@ export const authenticate = asyncHandler(
 
       const payload = TokenService.verifyAccessToken(token, decoded.type);
 
-      req.user = {
-        id: payload.sub,
-        role: payload.role,
-        type: payload.type,
-        orgId: payload.orgId, // Will be undefined for SYSTEM users
-      };
+      if (payload.type === "SYSTEM") {
+        req.user = {
+          id: payload.sub,
+          type: "SYSTEM",
+          role: "SYSTEM_ADMIN",
+        };
+      } else if (payload.type === "ORG") {
+        req.user = {
+          id: payload.sub,
+          type: "ORG",
+          role: payload.role as OrgRole,
+          orgId: payload.orgId!,
+        };
+      } else {
+        throw new AppError("Invalid token type", 401);
+      }
 
       next();
     } catch (error: any) {

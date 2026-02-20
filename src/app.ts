@@ -10,6 +10,9 @@ import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { AppError } from "./utils/appError.js";
 import orgAuthRouter from "./module/auth/org-auth/orgAuth.routes.js";
 import sysAuthRouter from "./module/auth/system-auth/systemAuth.routes.js";
+import sysUsersRouter from "./module/users/systemUser/systemUser.routes.js";
+import orgUsersRouter from "./module/users/orgUser/orgUser.route.js";
+
 // import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app = express();
@@ -34,6 +37,9 @@ app.get("/health", (_, res) => {
 
 app.use("/api/v1/org-auth", orgAuthRouter);
 app.use("/api/v1/sys-auth", sysAuthRouter);
+
+app.use("/api/v1/sys", sysUsersRouter);
+app.use("/api/v1/orgs/:orgSlug/users", orgUsersRouter);
 
 // 404 handler
 app.all("{/*path}", (req: Request, res: Response, next: NextFunction) => {

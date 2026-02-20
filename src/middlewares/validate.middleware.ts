@@ -1,4 +1,4 @@
-import { AppError } from "@/utils/appError.js";
+import { sendError } from "@/utils/response.js";
 import type { Request, Response, NextFunction } from "express";
 import { ZodObject, ZodError } from "zod";
 
@@ -14,12 +14,12 @@ export const validate =
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const details = error.issues.map((issue) => ({
-          path: issue.path[issue.path.length - 1],
+        const errors = error.issues.map((issue) => ({
+          path: String(issue.path[issue.path.length - 1] ?? "unknown"),
           message: issue.message,
         }));
 
-        return next(new AppError("Validation Failed"));
+        return sendError(res, "Validation failed", 422, errors);
       }
       next(error);
     }

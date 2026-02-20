@@ -2,14 +2,11 @@ import type { Request, Response } from "express";
 import { asyncHandler } from "@/utils/asyncHandler.js";
 import { SysAuthService } from "./systemAuth.service.js";
 import type { RegisterSystemUserDTO } from "./systemAuth.schema.js";
+import { sendSuccess } from "@/utils/response.js";
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
-  const { email, password, role } = req.body;
   const user = await SysAuthService.register(req.body as RegisterSystemUserDTO);
-  res.status(201).json({
-    status: "Registration successful",
-    user: user,
-  });
+  sendSuccess(res, { user }, 201, "System user registered successfully");
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
@@ -24,16 +21,17 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   res.cookie("refreshToken", result.tokens.refreshToken, {
     httpOnly: true,
-    secure: false, //set to true when process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production", //set to true when process.env.NODE_ENV === "production",
     sameSite: "lax",
     maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
-  res.status(200).json({
-    status: "login successful",
-    user: result.user,
-    token: result.tokens.accessToken,
-  });
+  sendSuccess(
+    res,
+    { user: result.user, accessToken: result.tokens.accessToken },
+    200,
+    "Login successful",
+  );
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
@@ -43,10 +41,7 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 
   res.clearCookie("refreshToken");
 
-  res.status(200).json({
-    status: "success",
-    message: "Logged out successfully",
-  });
+  sendSuccess(res, null, 200, "Logged out successfully");
 });
 
 export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
@@ -54,8 +49,5 @@ export const logoutAll = asyncHandler(async (req: Request, res: Response) => {
 
   res.clearCookie("refreshToken");
 
-  res.status(200).json({
-    status: "success",
-    message: "Logged out from all devices",
-  });
+  sendSuccess(res, null, 200, "Logged out from all devices");
 });
