@@ -12,6 +12,8 @@ import orgAuthRouter from "./module/auth/org-auth/orgAuth.routes.js";
 import sysAuthRouter from "./module/auth/system-auth/systemAuth.routes.js";
 import sysUsersRouter from "./module/users/systemUser/systemUser.routes.js";
 import orgUsersRouter from "./module/users/orgUser/orgUser.route.js";
+import inventoryRouter from "./module/inventory/inventory.routes.js";
+import { setupSwagger } from "./docs/swagger.setup.js";
 
 // import { errorMiddleware } from "./middlewares/error.middleware";
 
@@ -40,6 +42,10 @@ app.use("/api/v1/sys-auth", sysAuthRouter);
 
 app.use("/api/v1/sys", sysUsersRouter);
 app.use("/api/v1/orgs/:orgSlug/users", orgUsersRouter);
+app.use("/api/v1/orgs/:orgSlug/inventory", inventoryRouter);
+
+// API Docs
+setupSwagger(app);
 
 // 404 handler
 app.all("{/*path}", (req: Request, res: Response, next: NextFunction) => {

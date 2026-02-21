@@ -1,0 +1,82 @@
+model Category {
+    id             String       @id @default(uuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id])
+
+    name        String
+    description String?
+
+    products Product[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, name])
+    @@index([organizationId])
+}
+
+model Product {
+    id             String       @id @default(uuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id])
+
+    categoryId String?
+    category   Category? @relation(fields: [categoryId], references: [id])
+
+    name        String
+    description String?
+    sku         String // unique within org, not globally
+
+    costPrice    Decimal @db.Decimal(12, 2)
+    sellingPrice Decimal @db.Decimal(12, 2)
+
+    // Cached current stock level — updated atomically with every StockMovement
+    stockLevel Int @default(0)
+
+    // Low-stock alerting threshold. Null = no threshold set.
+    reorderPoint Int?
+
+    // Unit of measure: "units", "kg", "litres", etc.
+    unit String @default("units")
+
+    isArchived Boolean @default(false)
+
+    stockMovements StockMovement[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([organizationId, sku])
+    @@index([organizationId])
+    @@index([organizationId, isArchived])
+    @@index([organizationId, categoryId])
+}
+
+model StockMovement {
+    id        String  @id @default(uuid())
+    productId String
+    product   Product @relation(fields: [productId], references: [id])
+
+    performedById String
+    performedBy   OrgUser @relation(fields: [performedById], references: [id])
+
+    type     MovementType
+    quantity Int // always positive; direction is encoded in `type`
+
+    reason      String // mandatory human-readable reason
+    referenceId String? // optional link to Sale, PO, etc.
+
+    // Snapshot of stockLevel after this movement was applied
+    balanceAfter Int
+
+    createdAt DateTime @default(now())
+
+    @@index([productId])
+    @@index([productId, createdAt])
+    @@index([performedById])
+}
+
+enum MovementType {
+    IN
+    OUT
+}

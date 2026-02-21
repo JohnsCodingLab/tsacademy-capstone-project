@@ -5,7 +5,9 @@ model Organization {
 
     isActive Boolean @default(true)
 
-    users OrgUser[]
+    users      OrgUser[]
+    categories Category[]
+    products   Product[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

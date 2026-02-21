@@ -16,8 +16,9 @@ model OrgUser {
 
   lastLogin DateTime?
 
-  refreshTokens OrgRefreshToken[]
-  activities    UserActivity[]
+  refreshTokens  OrgRefreshToken[]
+  activities     UserActivity[]
+  stockMovements StockMovement[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
