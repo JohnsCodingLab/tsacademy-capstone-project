@@ -3,6 +3,6 @@ import { getForecast } from "./inventory.controller.js";
 
 const router = Router();
 
-router.get("/:id/forecast", getForecast);
+router.get("/forecast/:id", getForecast);
 
 export default router;

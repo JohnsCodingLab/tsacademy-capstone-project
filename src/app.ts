@@ -34,7 +34,7 @@ app.get("/health", (_, res) => {
 app.use("/api/v1/auth", authRouter);
 
 
-app.use("/inventory", inventoryRoutes);
+app.use("/api/v1/inventory", inventoryRoutes);
 
 // 404 handler
 app.all("{/*path}", (req: Request, res: Response, next: NextFunction) => {
