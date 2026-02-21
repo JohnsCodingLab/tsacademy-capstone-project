@@ -8,6 +8,8 @@ import { httpLogger } from "./middlewares/logger.middleware.js";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
 import { AppError } from "./utils/appError.js";
 import authRouter from "./module/auth/org-auth/orgAuth.routes.js";
+import inventoryRoutes from "./module/inventory/inventory.routes.js";
+
 // import { errorMiddleware } from "./middlewares/error.middleware";
 
 const app = express();
@@ -30,6 +32,9 @@ app.get("/health", (_, res) => {
 });
 
 app.use("/api/v1/auth", authRouter);
+
+
+app.use("/inventory", inventoryRoutes);
 
 // 404 handler
 app.all("{/*path}", (req: Request, res: Response, next: NextFunction) => {

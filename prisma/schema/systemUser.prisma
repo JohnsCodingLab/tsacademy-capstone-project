@@ -1,18 +1,18 @@
 model SystemUser {
-    id       String     @id @default(uuid())
-    email    String     @unique
-    password String
-    role     SystemRole @default(SYSTEM_ADMIN)
+  id       String     @id @default(uuid())
+  email    String     @unique
+  password String
+  role     SystemRole @default(SYSTEM_ADMIN)
 
-    refreshTokens SysRefreshToken[]
+  refreshTokens SysRefreshToken[]
 
-    isActive  Boolean   @default(true)
-    lastLogin DateTime?
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum SystemRole {
-    SYSTEM_ADMIN
+  SYSTEM_ADMIN
 }

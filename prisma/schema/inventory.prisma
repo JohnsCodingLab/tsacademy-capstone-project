@@ -1,28 +1,28 @@
 model Product {
-  id            String   @id @default(uuid())
-  name          String
-  sku           String   @unique
-  price         Decimal  @db.Decimal(10, 2)
+  id    String  @id @default(uuid())
+  name  String
+  sku   String  @unique
+  price Decimal @db.Decimal(10, 2)
 
-  stockLevel    Int      @default(0)
+  stockLevel Int @default(0)
 
-  safetyStock   Int      @default(10)
-  leadTimeDays  Int      @default(3)
+  safetyStock  Int @default(10)
+  leadTimeDays Int @default(3)
 
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  movements     StockMovement[]
+  movements StockMovement[]
 }
 
 model StockMovement {
-  id        String        @id @default(uuid())
+  id        String       @id @default(uuid())
   productId String
   type      MovementType
   quantity  Int
-  createdAt DateTime      @default(now())
+  createdAt DateTime     @default(now())
 
-  product   Product       @relation(fields: [productId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
 
   @@index([productId, createdAt])
 }

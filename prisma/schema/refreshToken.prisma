@@ -1,33 +1,33 @@
 model OrgRefreshToken {
-    id        String   @id @default(uuid())
-    jti       String   @unique
-    tokenHash String
-    expiresAt DateTime
+  id        String   @id @default(uuid())
+  jti       String   @unique
+  tokenHash String
+  expiresAt DateTime
 
-    orgUserId String
-    user      OrgUser @relation(fields: [orgUserId], references: [id])
+  orgUserId String
+  user      OrgUser @relation(fields: [orgUserId], references: [id])
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    ipAddress String?
-    userAgent String?
+  ipAddress String?
+  userAgent String?
 
-    @@index([orgUserId])
+  @@index([orgUserId])
 }
 
 model SysRefreshToken {
-    id        String   @id @default(uuid())
-    jti       String   @unique
-    tokenHash String
-    expiresAt DateTime
+  id        String   @id @default(uuid())
+  jti       String   @unique
+  tokenHash String
+  expiresAt DateTime
 
-    sysUserId String
-    user      SystemUser @relation(fields: [sysUserId], references: [id])
+  sysUserId String
+  user      SystemUser @relation(fields: [sysUserId], references: [id])
 
-    createdAt DateTime @default(now())
+  createdAt DateTime @default(now())
 
-    ipAddress String?
-    userAgent String?
+  ipAddress String?
+  userAgent String?
 
-    @@index([sysUserId])
+  @@index([sysUserId])
 }
