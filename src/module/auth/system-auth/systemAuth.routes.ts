@@ -10,7 +10,7 @@ import { authenticate } from "@/middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.post("/register-system-user", validate(systemRegisterSchema), register);
+router.post("/register", validate(systemRegisterSchema), register);
 router.post("/login", validate(systemLoginSchema), login);
 router.post("/logout", authenticate, logout);
 router.post("/logout-all", authenticate, logoutAll);

@@ -61,7 +61,10 @@ export class SysAuthService {
   static async logout(userId: string, refreshToken: string) {
     if (!refreshToken) throw new AppError("Refresh token required", 400);
 
-    const payload = await TokenService.verifyRefreshToken(refreshToken, "ORG");
+    const payload = await TokenService.verifyRefreshToken(
+      refreshToken,
+      "SYSTEM",
+    );
 
     if (payload.type !== "SYSTEM") {
       throw new AppError("Invalid token type", 403);

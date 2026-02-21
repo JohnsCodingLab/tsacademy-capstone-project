@@ -62,11 +62,26 @@ export class TokenService {
     );
 
     // Dynamic data mapping: System uses 'userId', Org uses 'orgUserId'
-    const data: any = { jti, tokenHash, expiresAt, ...meta };
-    if (type === "SYSTEM") data.userId = userId;
-    else data.orgUserId = userId;
-
-    await (config.model as any).create({ data });
+    const baseData: any = { jti, tokenHash, expiresAt, ...meta };
+    if (type === "SYSTEM") {
+      await (config.model as any).create({
+        data: {
+          ...baseData,
+          user: {
+            connect: { id: userId },
+          },
+        },
+      });
+    } else {
+      await (config.model as any).create({
+        data: {
+          ...baseData,
+          user: {
+            connect: { id: userId },
+          },
+        },
+      });
+    }
 
     logger.info(
       { userId, jti, type, event: "TOKEN_ISSUED" },
@@ -149,7 +164,7 @@ export class TokenService {
   //  Revoke all user tokens
   static async revokeAllUserTokens(userId: string, type: UserType) {
     const config = CONFIG[type];
-    const userField = type === "SYSTEM" ? "userId" : "orgUserId";
+    const userField = type === "SYSTEM" ? "sysUserId" : "orgUserId";
 
     const tokens = await (config.model as any).findMany({
       where: { [userField]: userId },

@@ -31,6 +31,6 @@ export class SysTokenService {
   }
 
   static async revokeAllTokens(userId: string) {
-    return TokenService.revokeToken(userId, "SYSTEM");
+    return TokenService.revokeAllUserTokens(userId, "SYSTEM");
   }
 }

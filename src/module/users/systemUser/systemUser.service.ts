@@ -3,10 +3,11 @@ import { AppError } from "@/utils/appError.js";
 import { logger } from "@/libs/logger.js";
 import { parsePagination, buildPaginationMeta } from "@/utils/pagination.js";
 import type { Request } from "express";
-import type {
-  Organization,
-  OrgUser,
-  SystemUser,
+import {
+  OrgRole,
+  type Organization,
+  type OrgUser,
+  type SystemUser,
 } from "@/generated/prisma/index.js";
 import type {
   ListOrgsQueryDTO,
@@ -125,10 +126,16 @@ export class SysUsersService {
     if (!org) throw new AppError("Organization not found", 404);
     if (org.isActive) throw new AppError("Organization is already active", 409);
 
-    await prisma.organization.update({
-      where: { id: org.id },
-      data: { isActive: true },
-    });
+    await prisma.$transaction([
+      prisma.organization.update({
+        where: { id: org.id },
+        data: { isActive: true },
+      }),
+      prisma.orgUser.updateMany({
+        where: { organizationId: org.id, role: OrgRole.ORG_SUPER_ADMIN },
+        data: { isActive: true, revokedAt: null },
+      }),
+    ]);
 
     logger.info(
       { orgId: org.id, actorId, event: "ORG_REACTIVATED" },

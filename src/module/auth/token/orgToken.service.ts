@@ -32,6 +32,6 @@ export class OrgTokenService {
   }
 
   static async revokeAllTokens(userId: string) {
-    return TokenService.revokeToken(userId, "ORG");
+    return TokenService.revokeAllUserTokens(userId, "ORG");
   }
 }
