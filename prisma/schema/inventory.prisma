@@ -42,6 +42,7 @@ model Product {
     isArchived Boolean @default(false)
 
     stockMovements StockMovement[]
+    saleItems      SaleItem[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

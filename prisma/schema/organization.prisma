@@ -8,6 +8,7 @@ model Organization {
     users      OrgUser[]
     categories Category[]
     products   Product[]
+    sales      Sale[]
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt

@@ -1,1701 +1,2154 @@
 openapi: 3.0.3
 
 info:
-  title: S.I.S.M.S — Smart Inventory & Sales Management System
-  version: 1.0.0
-  description: |
-    Enterprise-grade multi-tenant REST API for inventory and sales management.
+    title: S.I.S.M.S — Smart Inventory & Sales Management System
+    version: 1.0.0
+    description: |
+        Enterprise-grade multi-tenant REST API for inventory and sales management.
 
-    ## Authentication
-    Two separate JWT token families are used:
-    - **Org tokens** — issued to `OrgUser` accounts via `/api/v1/org-auth/login`
-    - **System tokens** — issued to `SystemUser` accounts via `/api/v1/sys-auth/login`
+        ## Authentication
+        Two separate JWT token families are used:
+        - **Org tokens** — issued to `OrgUser` accounts via `/api/v1/org-auth/login`
+        - **System tokens** — issued to `SystemUser` accounts via `/api/v1/sys-auth/login`
 
-    Pass the access token as a Bearer header:
-    ```
-    Authorization: Bearer <accessToken>
-    ```
+        Pass the access token as a Bearer header:
+        ```
+        Authorization: Bearer <accessToken>
+        ```
 
-    ## Roles
-    | Token Type | Roles |
-    |---|---|
-    | Org | `ORG_SUPER_ADMIN`, `ORG_ADMIN`, `ORG_USER` |
-    | System | `SYSTEM_ADMIN` |
+        ## Roles
+        | Token Type | Roles |
+        |---|---|
+        | Org | `ORG_SUPER_ADMIN`, `ORG_ADMIN`, `ORG_USER` |
+        | System | `SYSTEM_ADMIN` |
 
-  contact:
-    name: S.I.S.M.S Engineering
-  license:
-    name: MIT
+    contact:
+        name: S.I.S.M.S Engineering
+    license:
+        name: MIT
 
 servers:
-  - url: http://localhost:5000/api/v1
-    description: Local development
-  - url: https://your-production-domain.com/api/v1
-    description: Production
+    - url: http://localhost:5000/api/v1
+      description: Local development
+    - url: https://your-production-domain.com/api/v1
+      description: Production
 
 # ─── Security Schemes ─────────────────────────────────────────────────────────
 
 components:
-  securitySchemes:
-    OrgBearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT issued to OrgUser accounts
+    securitySchemes:
+        OrgBearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+            description: JWT issued to OrgUser accounts
 
-    SystemBearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: JWT issued to SystemUser accounts
+        SystemBearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+            description: JWT issued to SystemUser accounts
 
-  # ─── Reusable Parameters ────────────────────────────────────────────────────
+    # ─── Reusable Parameters ────────────────────────────────────────────────────
 
-  parameters:
-    orgSlug:
-      name: orgSlug
-      in: path
-      required: true
-      schema:
-        type: string
-        example: acme-corp
-      description: The unique URL slug of the organization
+    parameters:
+        orgSlug:
+            name: orgSlug
+            in: path
+            required: true
+            schema:
+                type: string
+                example: acme-corp
+            description: The unique URL slug of the organization
 
-    userId:
-      name: userId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: The UUID of the user
+        userId:
+            name: userId
+            in: path
+            required: true
+            schema:
+                type: string
+                format: uuid
+            description: The UUID of the user
 
-    productId:
-      name: productId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: The UUID of the product
+        productId:
+            name: productId
+            in: path
+            required: true
+            schema:
+                type: string
+                format: uuid
+            description: The UUID of the product
 
-    categoryId:
-      name: categoryId
-      in: path
-      required: true
-      schema:
-        type: string
-        format: uuid
-      description: The UUID of the category
+        categoryId:
+            name: categoryId
+            in: path
+            required: true
+            schema:
+                type: string
+                format: uuid
+            description: The UUID of the category
 
-    page:
-      name: page
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        default: 1
-
-    limit:
-      name: limit
-      in: query
-      schema:
-        type: integer
-        minimum: 1
-        maximum: 100
-        default: 20
-
-  # ─── Reusable Schemas ────────────────────────────────────────────────────────
-
-  schemas:
-    # ── Generic ──────────────────────────────────────────────────────────────
-
-    SuccessResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [success]
-        message:
-          type: string
-        data:
-          description: Response payload (varies per endpoint)
-
-    PaginatedMeta:
-      type: object
-      properties:
         page:
-          type: integer
-        limit:
-          type: integer
-        total:
-          type: integer
-        totalPages:
-          type: integer
-        hasNextPage:
-          type: boolean
-        hasPrevPage:
-          type: boolean
+            name: page
+            in: query
+            schema:
+                type: integer
+                minimum: 1
+                default: 1
 
-    ErrorResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [error]
-        message:
-          type: string
-        errors:
-          type: array
-          items:
+        limit:
+            name: limit
+            in: query
+            schema:
+                type: integer
+                minimum: 1
+                maximum: 100
+                default: 20
+
+    # ─── Reusable Schemas ────────────────────────────────────────────────────────
+
+    schemas:
+        # ── Generic ──────────────────────────────────────────────────────────────
+
+        SuccessResponse:
             type: object
             properties:
-              path:
-                type: string
-              message:
-                type: string
+                status:
+                    type: string
+                    enum: [success]
+                message:
+                    type: string
+                data:
+                    description: Response payload (varies per endpoint)
 
-    # ── Auth ─────────────────────────────────────────────────────────────────
+        PaginatedMeta:
+            type: object
+            properties:
+                page:
+                    type: integer
+                limit:
+                    type: integer
+                total:
+                    type: integer
+                totalPages:
+                    type: integer
+                hasNextPage:
+                    type: boolean
+                hasPrevPage:
+                    type: boolean
 
-    OrgUser:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        name:
-          type: string
-        email:
-          type: string
-          format: email
-        role:
-          type: string
-          enum: [ORG_SUPER_ADMIN, ORG_ADMIN, ORG_USER]
-        profileImageUrl:
-          type: string
-          nullable: true
-        isActive:
-          type: boolean
-        revokedAt:
-          type: string
-          format: date-time
-          nullable: true
-        lastLogin:
-          type: string
-          format: date-time
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+        ErrorResponse:
+            type: object
+            properties:
+                status:
+                    type: string
+                    enum: [error]
+                message:
+                    type: string
+                errors:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            path:
+                                type: string
+                            message:
+                                type: string
 
-    SystemUser:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        email:
-          type: string
-          format: email
-        role:
-          type: string
-          enum: [SYSTEM_ADMIN]
-        isActive:
-          type: boolean
-        lastLogin:
-          type: string
-          format: date-time
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+        # ── Auth ─────────────────────────────────────────────────────────────────
 
-    TokenPair:
-      type: object
-      properties:
-        accessToken:
-          type: string
-          description: Short-lived JWT (15 min). Send as Authorization Bearer header.
-        refreshToken:
-          type: string
-          description: Long-lived JWT (7 days). Also set as HttpOnly cookie.
+        OrgUser:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                organizationId:
+                    type: string
+                    format: uuid
+                name:
+                    type: string
+                email:
+                    type: string
+                    format: email
+                role:
+                    type: string
+                    enum: [ORG_SUPER_ADMIN, ORG_ADMIN, ORG_USER]
+                profileImageUrl:
+                    type: string
+                    nullable: true
+                isActive:
+                    type: boolean
+                revokedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+                lastLogin:
+                    type: string
+                    format: date-time
+                    nullable: true
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
 
-    # ── Organization ─────────────────────────────────────────────────────────
+        SystemUser:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                email:
+                    type: string
+                    format: email
+                role:
+                    type: string
+                    enum: [SYSTEM_ADMIN]
+                isActive:
+                    type: boolean
+                lastLogin:
+                    type: string
+                    format: date-time
+                    nullable: true
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
 
-    OrgSummary:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        slug:
-          type: string
-        isActive:
-          type: boolean
-        userCount:
-          type: integer
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+        TokenPair:
+            type: object
+            properties:
+                accessToken:
+                    type: string
+                    description: Short-lived JWT (15 min). Send as Authorization Bearer header.
+                refreshToken:
+                    type: string
+                    description: Long-lived JWT (7 days). Also set as HttpOnly cookie.
 
-    OrgDetail:
-      allOf:
-        - $ref: "#/components/schemas/OrgSummary"
-        - type: object
-          properties:
-            users:
-              type: array
-              items:
-                $ref: "#/components/schemas/OrgUser"
+        # ── Organization ─────────────────────────────────────────────────────────
 
-    # ── Inventory ─────────────────────────────────────────────────────────────
+        OrgSummary:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                name:
+                    type: string
+                slug:
+                    type: string
+                isActive:
+                    type: boolean
+                userCount:
+                    type: integer
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
 
-    Category:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        name:
-          type: string
-        description:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+        OrgDetail:
+            allOf:
+                - $ref: "#/components/schemas/OrgSummary"
+                - type: object
+                  properties:
+                      users:
+                          type: array
+                          items:
+                              $ref: "#/components/schemas/OrgUser"
 
-    Product:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        organizationId:
-          type: string
-          format: uuid
-        categoryId:
-          type: string
-          format: uuid
-          nullable: true
-        name:
-          type: string
-        description:
-          type: string
-          nullable: true
-        sku:
-          type: string
-          example: PROD-001
-        costPrice:
-          type: number
-          format: double
-        sellingPrice:
-          type: number
-          format: double
-        stockLevel:
-          type: integer
-        reorderPoint:
-          type: integer
-          nullable: true
-        unit:
-          type: string
-          example: units
-        isArchived:
-          type: boolean
-        isLowStock:
-          type: boolean
-          description: true when stockLevel <= reorderPoint
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
+        # ── Inventory ─────────────────────────────────────────────────────────────
 
-    StockMovement:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        productId:
-          type: string
-          format: uuid
-        productName:
-          type: string
-        performedById:
-          type: string
-          format: uuid
-        performedByName:
-          type: string
-        type:
-          type: string
-          enum: [IN, OUT]
-        quantity:
-          type: integer
-        reason:
-          type: string
-        referenceId:
-          type: string
-          nullable: true
-        balanceAfter:
-          type: integer
-          description: Snapshot of stockLevel after this movement
-        createdAt:
-          type: string
-          format: date-time
+        Category:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                organizationId:
+                    type: string
+                    format: uuid
+                name:
+                    type: string
+                description:
+                    type: string
+                    nullable: true
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
 
-    ForecastItem:
-      type: object
-      properties:
-        productId:
-          type: string
-          format: uuid
-        productName:
-          type: string
-        sku:
-          type: string
-        currentStock:
-          type: integer
-        reorderPoint:
-          type: integer
-          nullable: true
-        isLowStock:
-          type: boolean
-        avgDailySalesVelocity:
-          type: number
-          nullable: true
-          description: Average units sold per day over the analysis window
-        daysUntilStockout:
-          type: number
-          nullable: true
-        estimatedStockoutDate:
-          type: string
-          format: date-time
-          nullable: true
-        analysisWindowDays:
-          type: integer
+        Product:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                organizationId:
+                    type: string
+                    format: uuid
+                categoryId:
+                    type: string
+                    format: uuid
+                    nullable: true
+                name:
+                    type: string
+                description:
+                    type: string
+                    nullable: true
+                sku:
+                    type: string
+                    example: PROD-001
+                costPrice:
+                    type: number
+                    format: double
+                sellingPrice:
+                    type: number
+                    format: double
+                stockLevel:
+                    type: integer
+                reorderPoint:
+                    type: integer
+                    nullable: true
+                unit:
+                    type: string
+                    example: units
+                isArchived:
+                    type: boolean
+                isLowStock:
+                    type: boolean
+                    description: true when stockLevel <= reorderPoint
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
 
-    UserActivity:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        action:
-          type: string
-        metadata:
-          type: object
-          nullable: true
-        ipAddress:
-          type: string
-          nullable: true
-        userAgent:
-          type: string
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
+        StockMovement:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                productId:
+                    type: string
+                    format: uuid
+                productName:
+                    type: string
+                performedById:
+                    type: string
+                    format: uuid
+                performedByName:
+                    type: string
+                type:
+                    type: string
+                    enum: [IN, OUT]
+                quantity:
+                    type: integer
+                reason:
+                    type: string
+                referenceId:
+                    type: string
+                    nullable: true
+                balanceAfter:
+                    type: integer
+                    description: Snapshot of stockLevel after this movement
+                createdAt:
+                    type: string
+                    format: date-time
+
+        ForecastItem:
+            type: object
+            properties:
+                productId:
+                    type: string
+                    format: uuid
+                productName:
+                    type: string
+                sku:
+                    type: string
+                currentStock:
+                    type: integer
+                reorderPoint:
+                    type: integer
+                    nullable: true
+                isLowStock:
+                    type: boolean
+                avgDailySalesVelocity:
+                    type: number
+                    nullable: true
+                    description: Average units sold per day over the analysis window
+                daysUntilStockout:
+                    type: number
+                    nullable: true
+                estimatedStockoutDate:
+                    type: string
+                    format: date-time
+                    nullable: true
+                analysisWindowDays:
+                    type: integer
+
+        UserActivity:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                action:
+                    type: string
+                metadata:
+                    type: object
+                    nullable: true
+                ipAddress:
+                    type: string
+                    nullable: true
+                userAgent:
+                    type: string
+                    nullable: true
+                createdAt:
+                    type: string
+                    format: date-time
+
+        Sale:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                organizationId:
+                    type: string
+                    format: uuid
+                createdById:
+                    type: string
+                    format: uuid
+                createdByName:
+                    type: string
+                processedById:
+                    type: string
+                    format: uuid
+                    nullable: true
+                processedByName:
+                    type: string
+                    nullable: true
+                status:
+                    type: string
+                    enum: [PENDING, APPROVED, COMPLETED, CANCELLED]
+                subtotal:
+                    type: number
+                    format: double
+                discountAmount:
+                    type: number
+                    format: double
+                taxAmount:
+                    type: number
+                    format: double
+                totalAmount:
+                    type: number
+                    format: double
+                notes:
+                    type: string
+                    nullable: true
+                approvedAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+                cancelledAt:
+                    type: string
+                    format: date-time
+                    nullable: true
+                cancellationNote:
+                    type: string
+                    nullable: true
+                items:
+                    type: array
+                    items:
+                        $ref: "#/components/schemas/SaleItem"
+                createdAt:
+                    type: string
+                    format: date-time
+                updatedAt:
+                    type: string
+                    format: date-time
+
+        SaleSummary:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                createdByName:
+                    type: string
+                status:
+                    type: string
+                    enum: [PENDING, APPROVED, COMPLETED, CANCELLED]
+                totalAmount:
+                    type: number
+                    format: double
+                itemCount:
+                    type: integer
+                createdAt:
+                    type: string
+                    format: date-time
+
+        SaleItem:
+            type: object
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                productId:
+                    type: string
+                    format: uuid
+                productName:
+                    type: string
+                productSku:
+                    type: string
+                quantity:
+                    type: integer
+                unitPrice:
+                    type: number
+                    format: double
+                    description: Price snapshotted at sale creation — independent of future price changes
+                lineDiscount:
+                    type: number
+                    format: double
+                lineTotal:
+                    type: number
+                    format: double
+
+        SalesSummary:
+            type: object
+            properties:
+                totalSales:
+                    type: integer
+                    description: Count of APPROVED + COMPLETED sales
+                totalRevenue:
+                    type: number
+                    format: double
+                averageOrderValue:
+                    type: number
+                    format: double
+                byStatus:
+                    type: object
+                    properties:
+                        PENDING:
+                            type: integer
+                        APPROVED:
+                            type: integer
+                        COMPLETED:
+                            type: integer
+                        CANCELLED:
+                            type: integer
+                topProducts:
+                    type: array
+                    items:
+                        type: object
+                        properties:
+                            productId:
+                                type: string
+                                format: uuid
+                            productName:
+                                type: string
+                            totalQuantitySold:
+                                type: integer
+                            totalRevenue:
+                                type: number
+                                format: double
 
 # ─── Tags (grouping in Swagger UI) ───────────────────────────────────────────
 
 tags:
-  - name: Org Auth
-    description: Registration, login and session management for organization users
-  - name: System Auth
-    description: Login and session management for system administrators
-  - name: System — Organizations
-    description: Platform-level organization management (SYSTEM_ADMIN only)
-  - name: System — Users
-    description: Platform-level system user management (SYSTEM_ADMIN only)
-  - name: Org — Users
-    description: User management within an organization
-  - name: Inventory — Categories
-    description: Product category management
-  - name: Inventory — Products
-    description: Product catalog management
-  - name: Inventory — Stock
-    description: Stock adjustments and movement history
-  - name: Inventory — Insights
-    description: Low-stock alerts and smart forecasting
+    - name: Org Auth
+      description: Registration, login and session management for organization users
+    - name: System Auth
+      description: Login and session management for system administrators
+    - name: System — Organizations
+      description: Platform-level organization management (SYSTEM_ADMIN only)
+    - name: System — Users
+      description: Platform-level system user management (SYSTEM_ADMIN only)
+    - name: Org — Users
+      description: User management within an organization
+    - name: Inventory — Categories
+      description: Product category management
+    - name: Inventory — Products
+      description: Product catalog management
+    - name: Inventory — Stock
+      description: Stock adjustments and movement history
+    - name: Inventory — Insights
+      description: Low-stock alerts and smart forecasting
+    - name: Sales
+      description: Sale lifecycle management — create, approve, complete, cancel, and reporting
 
 # ═════════════════════════════════════════════════════════════════════════════
 # PATHS
 # ═════════════════════════════════════════════════════════════════════════════
 
 paths:
-  # ─── Org Auth ──────────────────────────────────────────────────────────────
+    # ─── Org Auth ──────────────────────────────────────────────────────────────
 
-  /org-auth/register:
-    post:
-      tags: [Org Auth]
-      summary: Register a new organization
-      description: |
-        Creates a new organization and its first user with the
-        `ORG_SUPER_ADMIN` role in a single atomic transaction.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [organizationName, name, email, password]
-              properties:
-                organizationName:
-                  type: string
-                  minLength: 3
-                  example: Acme Corp
-                name:
-                  type: string
-                  minLength: 2
-                  example: John Doe
-                email:
-                  type: string
-                  format: email
-                  example: john@acme.com
-                password:
-                  type: string
-                  minLength: 8
-                  example: s3cur3P@ss
-      responses:
-        "201":
-          description: Organization and super-admin user created
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        $ref: "#/components/schemas/OrgUser"
-        "409":
-          description: Organization name or email already exists
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "422":
-          description: Validation failed
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+    /org-auth/register:
+        post:
+            tags: [Org Auth]
+            summary: Register a new organization
+            description: |
+                Creates a new organization and its first user with the
+                `ORG_SUPER_ADMIN` role in a single atomic transaction.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [organizationName, name, email, password]
+                            properties:
+                                organizationName:
+                                    type: string
+                                    minLength: 3
+                                    example: Acme Corp
+                                name:
+                                    type: string
+                                    minLength: 2
+                                    example: John Doe
+                                email:
+                                    type: string
+                                    format: email
+                                    example: john@acme.com
+                                password:
+                                    type: string
+                                    minLength: 8
+                                    example: s3cur3P@ss
+            responses:
+                "201":
+                    description: Organization and super-admin user created
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              $ref: "#/components/schemas/OrgUser"
+                "409":
+                    description: Organization name or email already exists
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "422":
+                    description: Validation failed
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
 
-  /org-auth/login:
-    post:
-      tags: [Org Auth]
-      summary: Log in as an org user
-      description: |
-        Authenticates against a specific organization identified by `orgSlug`.
-        Returns an access token and sets the refresh token as an HttpOnly cookie.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [orgSlug, email, password]
-              properties:
-                orgSlug:
-                  type: string
-                  example: acme-corp
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  minLength: 8
-      responses:
-        "200":
-          description: Login successful
-          headers:
-            Set-Cookie:
-              description: HttpOnly refresh token cookie
-              schema:
-                type: string
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          user:
-                            $ref: "#/components/schemas/OrgUser"
-                          accessToken:
-                            type: string
-        "401":
-          description: Invalid credentials
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
-        "403":
-          description: Account or organization is deactivated
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ErrorResponse"
+    /org-auth/login:
+        post:
+            tags: [Org Auth]
+            summary: Log in as an org user
+            description: |
+                Authenticates against a specific organization identified by `orgSlug`.
+                Returns an access token and sets the refresh token as an HttpOnly cookie.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [orgSlug, email, password]
+                            properties:
+                                orgSlug:
+                                    type: string
+                                    example: acme-corp
+                                email:
+                                    type: string
+                                    format: email
+                                password:
+                                    type: string
+                                    minLength: 8
+            responses:
+                "200":
+                    description: Login successful
+                    headers:
+                        Set-Cookie:
+                            description: HttpOnly refresh token cookie
+                            schema:
+                                type: string
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  user:
+                                                      $ref: "#/components/schemas/OrgUser"
+                                                  accessToken:
+                                                      type: string
+                "401":
+                    description: Invalid credentials
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
+                "403":
+                    description: Account or organization is deactivated
+                    content:
+                        application/json:
+                            schema:
+                                $ref: "#/components/schemas/ErrorResponse"
 
-  /org-auth/logout:
-    post:
-      tags: [Org Auth]
-      summary: Log out current session
-      description: Revokes the current refresh token. Clears the cookie.
-      security:
-        - OrgBearerAuth: []
-      responses:
-        "200":
-          description: Logged out successfully
-        "401":
-          description: Unauthorized
+    /org-auth/logout:
+        post:
+            tags: [Org Auth]
+            summary: Log out current session
+            description: Revokes the current refresh token. Clears the cookie.
+            security:
+                - OrgBearerAuth: []
+            responses:
+                "200":
+                    description: Logged out successfully
+                "401":
+                    description: Unauthorized
 
-  /org-auth/logout-all:
-    post:
-      tags: [Org Auth]
-      summary: Log out all devices
-      description: Revokes all refresh tokens for the authenticated user.
-      security:
-        - OrgBearerAuth: []
-      responses:
-        "200":
-          description: Logged out from all devices
-        "401":
-          description: Unauthorized
+    /org-auth/logout-all:
+        post:
+            tags: [Org Auth]
+            summary: Log out all devices
+            description: Revokes all refresh tokens for the authenticated user.
+            security:
+                - OrgBearerAuth: []
+            responses:
+                "200":
+                    description: Logged out from all devices
+                "401":
+                    description: Unauthorized
 
-  # ─── System Auth ───────────────────────────────────────────────────────────
+    # ─── System Auth ───────────────────────────────────────────────────────────
 
-  /sys-auth/register-system-user:
-    post:
-      tags: [System Auth]
-      summary: Register a system administrator
-      description: |
-        Creates a new `SYSTEM_ADMIN` user. In production this endpoint
-        should be restricted to an internal network or removed after bootstrapping.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  minLength: 8
-      responses:
-        "201":
-          description: System user created
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        $ref: "#/components/schemas/SystemUser"
-        "409":
-          description: Email already in use
+    /sys-auth/register-system-user:
+        post:
+            tags: [System Auth]
+            summary: Register a system administrator
+            description: |
+                Creates a new `SYSTEM_ADMIN` user. In production this endpoint
+                should be restricted to an internal network or removed after bootstrapping.
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, password]
+                            properties:
+                                email:
+                                    type: string
+                                    format: email
+                                password:
+                                    type: string
+                                    minLength: 8
+            responses:
+                "201":
+                    description: System user created
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              $ref: "#/components/schemas/SystemUser"
+                "409":
+                    description: Email already in use
 
-  /sys-auth/login:
-    post:
-      tags: [System Auth]
-      summary: Log in as a system administrator
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [email, password]
-              properties:
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  minLength: 8
-      responses:
-        "200":
-          description: Login successful
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          user:
-                            $ref: "#/components/schemas/SystemUser"
-                          accessToken:
-                            type: string
-        "401":
-          description: Invalid credentials
+    /sys-auth/login:
+        post:
+            tags: [System Auth]
+            summary: Log in as a system administrator
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [email, password]
+                            properties:
+                                email:
+                                    type: string
+                                    format: email
+                                password:
+                                    type: string
+                                    minLength: 8
+            responses:
+                "200":
+                    description: Login successful
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  user:
+                                                      $ref: "#/components/schemas/SystemUser"
+                                                  accessToken:
+                                                      type: string
+                "401":
+                    description: Invalid credentials
 
-  /sys-auth/logout:
-    post:
-      tags: [System Auth]
-      summary: Log out current system session
-      security:
-        - SystemBearerAuth: []
-      responses:
-        "200":
-          description: Logged out
+    /sys-auth/logout:
+        post:
+            tags: [System Auth]
+            summary: Log out current system session
+            security:
+                - SystemBearerAuth: []
+            responses:
+                "200":
+                    description: Logged out
 
-  /sys-auth/logout-all:
-    post:
-      tags: [System Auth]
-      summary: Log out all system sessions
-      security:
-        - SystemBearerAuth: []
-      responses:
-        "200":
-          description: Logged out from all devices
+    /sys-auth/logout-all:
+        post:
+            tags: [System Auth]
+            summary: Log out all system sessions
+            security:
+                - SystemBearerAuth: []
+            responses:
+                "200":
+                    description: Logged out from all devices
 
-  # ─── System — Organizations ────────────────────────────────────────────────
+    # ─── System — Organizations ────────────────────────────────────────────────
 
-  /sys/orgs:
-    get:
-      tags: [System — Organizations]
-      summary: List all organizations
-      security:
-        - SystemBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/page"
-        - $ref: "#/components/parameters/limit"
-        - name: isActive
-          in: query
-          schema:
-            type: string
-            enum: ["true", "false"]
-        - name: search
-          in: query
-          schema:
-            type: string
-            description: Search by organization name
-      responses:
-        "200":
-          description: Paginated list of organizations
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/OrgSummary"
-                      meta:
-                        $ref: "#/components/schemas/PaginatedMeta"
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden — SYSTEM_ADMIN only
+    /sys/orgs:
+        get:
+            tags: [System — Organizations]
+            summary: List all organizations
+            security:
+                - SystemBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/page"
+                - $ref: "#/components/parameters/limit"
+                - name: isActive
+                  in: query
+                  schema:
+                      type: string
+                      enum: ["true", "false"]
+                - name: search
+                  in: query
+                  schema:
+                      type: string
+                      description: Search by organization name
+            responses:
+                "200":
+                    description: Paginated list of organizations
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/OrgSummary"
+                                          meta:
+                                              $ref: "#/components/schemas/PaginatedMeta"
+                "401":
+                    description: Unauthorized
+                "403":
+                    description: Forbidden — SYSTEM_ADMIN only
 
-  /sys/orgs/{orgSlug}:
-    get:
-      tags: [System — Organizations]
-      summary: Get organization details
-      description: Returns full org info including all its users.
-      security:
-        - SystemBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      responses:
-        "200":
-          description: Organization details
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          org:
-                            $ref: "#/components/schemas/OrgDetail"
-        "404":
-          description: Organization not found
+    /sys/orgs/{orgSlug}:
+        get:
+            tags: [System — Organizations]
+            summary: Get organization details
+            description: Returns full org info including all its users.
+            security:
+                - SystemBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            responses:
+                "200":
+                    description: Organization details
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  org:
+                                                      $ref: "#/components/schemas/OrgDetail"
+                "404":
+                    description: Organization not found
 
-  /sys/orgs/{orgSlug}/deactivate:
-    patch:
-      tags: [System — Organizations]
-      summary: Deactivate an organization
-      description: |
-        Soft-disables the organization and cascades to all its users
-        in a single transaction. All active sessions for org users are revoked.
-      security:
-        - SystemBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      responses:
-        "200":
-          description: Organization deactivated
-        "404":
-          description: Organization not found
-        "409":
-          description: Organization is already inactive
+    /sys/orgs/{orgSlug}/deactivate:
+        patch:
+            tags: [System — Organizations]
+            summary: Deactivate an organization
+            description: |
+                Soft-disables the organization and cascades to all its users
+                in a single transaction. All active sessions for org users are revoked.
+            security:
+                - SystemBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            responses:
+                "200":
+                    description: Organization deactivated
+                "404":
+                    description: Organization not found
+                "409":
+                    description: Organization is already inactive
 
-  /sys/orgs/{orgSlug}/activate:
-    patch:
-      tags: [System — Organizations]
-      summary: Reactivate an organization
-      description: |
-        Re-enables the organization. Individual users must be reactivated
-        separately — this is intentional to allow selective restoration.
-      security:
-        - SystemBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      responses:
-        "200":
-          description: Organization reactivated
-        "404":
-          description: Organization not found
-        "409":
-          description: Organization is already active
+    /sys/orgs/{orgSlug}/activate:
+        patch:
+            tags: [System — Organizations]
+            summary: Reactivate an organization
+            description: |
+                Re-enables the organization. Individual users must be reactivated
+                separately — this is intentional to allow selective restoration.
+            security:
+                - SystemBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            responses:
+                "200":
+                    description: Organization reactivated
+                "404":
+                    description: Organization not found
+                "409":
+                    description: Organization is already active
 
-  # ─── System — Users ────────────────────────────────────────────────────────
+    # ─── System — Users ────────────────────────────────────────────────────────
 
-  /sys/users:
-    get:
-      tags: [System — Users]
-      summary: List system users
-      security:
-        - SystemBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/page"
-        - $ref: "#/components/parameters/limit"
-        - name: isActive
-          in: query
-          schema:
-            type: string
-            enum: ["true", "false"]
-      responses:
-        "200":
-          description: Paginated list of system users
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/SystemUser"
-                      meta:
-                        $ref: "#/components/schemas/PaginatedMeta"
+    /sys/users:
+        get:
+            tags: [System — Users]
+            summary: List system users
+            security:
+                - SystemBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/page"
+                - $ref: "#/components/parameters/limit"
+                - name: isActive
+                  in: query
+                  schema:
+                      type: string
+                      enum: ["true", "false"]
+            responses:
+                "200":
+                    description: Paginated list of system users
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/SystemUser"
+                                          meta:
+                                              $ref: "#/components/schemas/PaginatedMeta"
 
-  /sys/users/{userId}:
-    get:
-      tags: [System — Users]
-      summary: Get a system user
-      security:
-        - SystemBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: System user details
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          user:
-                            $ref: "#/components/schemas/SystemUser"
-        "404":
-          description: User not found
-    delete:
-      tags: [System — Users]
-      summary: Permanently delete a system user
-      description: Cannot delete your own account.
-      security:
-        - SystemBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: User deleted
-        "400":
-          description: Cannot delete your own account
-        "404":
-          description: User not found
+    /sys/users/{userId}:
+        get:
+            tags: [System — Users]
+            summary: Get a system user
+            security:
+                - SystemBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/userId"
+            responses:
+                "200":
+                    description: System user details
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  user:
+                                                      $ref: "#/components/schemas/SystemUser"
+                "404":
+                    description: User not found
+        delete:
+            tags: [System — Users]
+            summary: Permanently delete a system user
+            description: Cannot delete your own account.
+            security:
+                - SystemBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/userId"
+            responses:
+                "200":
+                    description: User deleted
+                "400":
+                    description: Cannot delete your own account
+                "404":
+                    description: User not found
 
-  /sys/users/{userId}/deactivate:
-    patch:
-      tags: [System — Users]
-      summary: Deactivate a system user
-      description: Cannot deactivate your own account.
-      security:
-        - SystemBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: User deactivated
-        "400":
-          description: Cannot deactivate your own account
-        "409":
-          description: User is already inactive
+    /sys/users/{userId}/deactivate:
+        patch:
+            tags: [System — Users]
+            summary: Deactivate a system user
+            description: Cannot deactivate your own account.
+            security:
+                - SystemBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/userId"
+            responses:
+                "200":
+                    description: User deactivated
+                "400":
+                    description: Cannot deactivate your own account
+                "409":
+                    description: User is already inactive
 
-  # ─── Org Users ─────────────────────────────────────────────────────────────
+    # ─── Org Users ─────────────────────────────────────────────────────────────
 
-  /orgs/{orgSlug}/users/me:
-    get:
-      tags: [Org — Users]
-      summary: Get own profile
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      responses:
-        "200":
-          description: Own user profile
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          user:
-                            $ref: "#/components/schemas/OrgUser"
+    /orgs/{orgSlug}/users/me:
+        get:
+            tags: [Org — Users]
+            summary: Get own profile
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            responses:
+                "200":
+                    description: Own user profile
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  user:
+                                                      $ref: "#/components/schemas/OrgUser"
 
-  /orgs/{orgSlug}/users/me/change-password:
-    patch:
-      tags: [Org — Users]
-      summary: Change own password
-      description: |
-        Revokes ALL active sessions after success — the user must
-        log in again on all devices.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [currentPassword, newPassword, confirmPassword]
-              properties:
-                currentPassword:
-                  type: string
-                newPassword:
-                  type: string
-                  minLength: 8
-                confirmPassword:
-                  type: string
-      responses:
-        "200":
-          description: Password changed. All sessions revoked.
-        "401":
-          description: Current password is incorrect
+    /orgs/{orgSlug}/users/me/change-password:
+        patch:
+            tags: [Org — Users]
+            summary: Change own password
+            description: |
+                Revokes ALL active sessions after success — the user must
+                log in again on all devices.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required:
+                                [currentPassword, newPassword, confirmPassword]
+                            properties:
+                                currentPassword:
+                                    type: string
+                                newPassword:
+                                    type: string
+                                    minLength: 8
+                                confirmPassword:
+                                    type: string
+            responses:
+                "200":
+                    description: Password changed. All sessions revoked.
+                "401":
+                    description: Current password is incorrect
 
-  /orgs/{orgSlug}/users:
-    get:
-      tags: [Org — Users]
-      summary: List org users
-      description: |
-        `ORG_USER` can only see themselves.
-        `ORG_ADMIN` and `ORG_SUPER_ADMIN` see all users with filtering.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/page"
-        - $ref: "#/components/parameters/limit"
-        - name: role
-          in: query
-          schema:
-            type: string
-            enum: [ORG_SUPER_ADMIN, ORG_ADMIN, ORG_USER]
-        - name: isActive
-          in: query
-          schema:
-            type: string
-            enum: ["true", "false"]
-        - name: search
-          in: query
-          schema:
-            type: string
-            description: Search by name or email
-      responses:
-        "200":
-          description: Paginated list of org users
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/OrgUser"
-                      meta:
-                        $ref: "#/components/schemas/PaginatedMeta"
+    /orgs/{orgSlug}/users:
+        get:
+            tags: [Org — Users]
+            summary: List org users
+            description: |
+                `ORG_USER` can only see themselves.
+                `ORG_ADMIN` and `ORG_SUPER_ADMIN` see all users with filtering.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/page"
+                - $ref: "#/components/parameters/limit"
+                - name: role
+                  in: query
+                  schema:
+                      type: string
+                      enum: [ORG_SUPER_ADMIN, ORG_ADMIN, ORG_USER]
+                - name: isActive
+                  in: query
+                  schema:
+                      type: string
+                      enum: ["true", "false"]
+                - name: search
+                  in: query
+                  schema:
+                      type: string
+                      description: Search by name or email
+            responses:
+                "200":
+                    description: Paginated list of org users
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/OrgUser"
+                                          meta:
+                                              $ref: "#/components/schemas/PaginatedMeta"
 
-    post:
-      tags: [Org — Users]
-      summary: Create / invite a new org user
-      description: |
-        `ORG_ADMIN` can only create `ORG_USER` accounts.
-        `ORG_SUPER_ADMIN` can create `ORG_ADMIN` or `ORG_USER`.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, email, password]
-              properties:
-                name:
-                  type: string
-                  minLength: 2
-                email:
-                  type: string
-                  format: email
-                password:
-                  type: string
-                  minLength: 8
-                role:
-                  type: string
-                  enum: [ORG_ADMIN, ORG_USER]
-                  default: ORG_USER
-      responses:
-        "201":
-          description: User created
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          user:
-                            $ref: "#/components/schemas/OrgUser"
-        "403":
-          description: Insufficient role to create this user type
-        "409":
-          description: Email already in use in this organization
+        post:
+            tags: [Org — Users]
+            summary: Create / invite a new org user
+            description: |
+                `ORG_ADMIN` can only create `ORG_USER` accounts.
+                `ORG_SUPER_ADMIN` can create `ORG_ADMIN` or `ORG_USER`.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [name, email, password]
+                            properties:
+                                name:
+                                    type: string
+                                    minLength: 2
+                                email:
+                                    type: string
+                                    format: email
+                                password:
+                                    type: string
+                                    minLength: 8
+                                role:
+                                    type: string
+                                    enum: [ORG_ADMIN, ORG_USER]
+                                    default: ORG_USER
+            responses:
+                "201":
+                    description: User created
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  user:
+                                                      $ref: "#/components/schemas/OrgUser"
+                "403":
+                    description: Insufficient role to create this user type
+                "409":
+                    description: Email already in use in this organization
 
-  /orgs/{orgSlug}/users/{userId}:
-    get:
-      tags: [Org — Users]
-      summary: Get a user profile
-      description: ORG_USER can only view their own profile.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: User profile
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          user:
-                            $ref: "#/components/schemas/OrgUser"
-        "403":
-          description: Cannot view another user's profile
-        "404":
-          description: User not found
+    /orgs/{orgSlug}/users/{userId}:
+        get:
+            tags: [Org — Users]
+            summary: Get a user profile
+            description: ORG_USER can only view their own profile.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/userId"
+            responses:
+                "200":
+                    description: User profile
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  user:
+                                                      $ref: "#/components/schemas/OrgUser"
+                "403":
+                    description: Cannot view another user's profile
+                "404":
+                    description: User not found
 
-    patch:
-      tags: [Org — Users]
-      summary: Update a user profile
-      description: |
-        Role changes are restricted to `ORG_SUPER_ADMIN` only.
-        `ORG_ADMIN` cannot edit peer admins or the super admin.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/userId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  minLength: 2
-                profileImageUrl:
-                  type: string
-                  nullable: true
-                role:
-                  type: string
-                  enum: [ORG_ADMIN, ORG_USER]
-                  description: ORG_SUPER_ADMIN only
-      responses:
-        "200":
-          description: User updated
-        "403":
-          description: Insufficient privileges
-        "404":
-          description: User not found
+        patch:
+            tags: [Org — Users]
+            summary: Update a user profile
+            description: |
+                Role changes are restricted to `ORG_SUPER_ADMIN` only.
+                `ORG_ADMIN` cannot edit peer admins or the super admin.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/userId"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                    minLength: 2
+                                profileImageUrl:
+                                    type: string
+                                    nullable: true
+                                role:
+                                    type: string
+                                    enum: [ORG_ADMIN, ORG_USER]
+                                    description: ORG_SUPER_ADMIN only
+            responses:
+                "200":
+                    description: User updated
+                "403":
+                    description: Insufficient privileges
+                "404":
+                    description: User not found
 
-    delete:
-      tags: [Org — Users]
-      summary: Permanently delete a user
-      description: ORG_SUPER_ADMIN only. Cannot delete own account.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: User permanently deleted
-        "400":
-          description: Cannot delete own account
-        "403":
-          description: Forbidden
+        delete:
+            tags: [Org — Users]
+            summary: Permanently delete a user
+            description: ORG_SUPER_ADMIN only. Cannot delete own account.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/userId"
+            responses:
+                "200":
+                    description: User permanently deleted
+                "400":
+                    description: Cannot delete own account
+                "403":
+                    description: Forbidden
 
-  /orgs/{orgSlug}/users/{userId}/deactivate:
-    patch:
-      tags: [Org — Users]
-      summary: Deactivate a user
-      description: |
-        Soft-disables the user and revokes all their active sessions.
-        Cannot deactivate own account.
-        `ORG_ADMIN` cannot target peer admins or the super admin.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: User deactivated
-        "400":
-          description: Cannot deactivate own account
-        "403":
-          description: Insufficient privileges
-        "409":
-          description: User is already inactive
+    /orgs/{orgSlug}/users/{userId}/deactivate:
+        patch:
+            tags: [Org — Users]
+            summary: Deactivate a user
+            description: |
+                Soft-disables the user and revokes all their active sessions.
+                Cannot deactivate own account.
+                `ORG_ADMIN` cannot target peer admins or the super admin.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/userId"
+            responses:
+                "200":
+                    description: User deactivated
+                "400":
+                    description: Cannot deactivate own account
+                "403":
+                    description: Insufficient privileges
+                "409":
+                    description: User is already inactive
 
-  /orgs/{orgSlug}/users/{userId}/reactivate:
-    patch:
-      tags: [Org — Users]
-      summary: Reactivate a user
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/userId"
-      responses:
-        "200":
-          description: User reactivated
-        "403":
-          description: Insufficient privileges
-        "409":
-          description: User is already active
+    /orgs/{orgSlug}/users/{userId}/reactivate:
+        patch:
+            tags: [Org — Users]
+            summary: Reactivate a user
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/userId"
+            responses:
+                "200":
+                    description: User reactivated
+                "403":
+                    description: Insufficient privileges
+                "409":
+                    description: User is already active
 
-  /orgs/{orgSlug}/users/{userId}/activity:
-    get:
-      tags: [Org — Users]
-      summary: Get user activity log
-      description: ORG_USER can only view their own activity.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/userId"
-        - $ref: "#/components/parameters/page"
-        - $ref: "#/components/parameters/limit"
-      responses:
-        "200":
-          description: Paginated activity log
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/UserActivity"
-                      meta:
-                        $ref: "#/components/schemas/PaginatedMeta"
+    /orgs/{orgSlug}/users/{userId}/activity:
+        get:
+            tags: [Org — Users]
+            summary: Get user activity log
+            description: ORG_USER can only view their own activity.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/userId"
+                - $ref: "#/components/parameters/page"
+                - $ref: "#/components/parameters/limit"
+            responses:
+                "200":
+                    description: Paginated activity log
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/UserActivity"
+                                          meta:
+                                              $ref: "#/components/schemas/PaginatedMeta"
 
-  # ─── Inventory — Categories ────────────────────────────────────────────────
+    # ─── Inventory — Categories ────────────────────────────────────────────────
 
-  /orgs/{orgSlug}/inventory/categories:
-    get:
-      tags: [Inventory — Categories]
-      summary: List all categories
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      responses:
-        "200":
-          description: List of categories
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/Category"
+    /orgs/{orgSlug}/inventory/categories:
+        get:
+            tags: [Inventory — Categories]
+            summary: List all categories
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            responses:
+                "200":
+                    description: List of categories
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/Category"
 
-    post:
-      tags: [Inventory — Categories]
-      summary: Create a category
-      description: ORG_ADMIN and ORG_SUPER_ADMIN only.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name]
-              properties:
-                name:
-                  type: string
-                  minLength: 2
-                description:
-                  type: string
-      responses:
-        "201":
-          description: Category created
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          category:
-                            $ref: "#/components/schemas/Category"
-        "409":
-          description: Category name already exists in this organization
+        post:
+            tags: [Inventory — Categories]
+            summary: Create a category
+            description: ORG_ADMIN and ORG_SUPER_ADMIN only.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [name]
+                            properties:
+                                name:
+                                    type: string
+                                    minLength: 2
+                                description:
+                                    type: string
+            responses:
+                "201":
+                    description: Category created
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  category:
+                                                      $ref: "#/components/schemas/Category"
+                "409":
+                    description: Category name already exists in this organization
 
-  /orgs/{orgSlug}/inventory/categories/{categoryId}:
-    patch:
-      tags: [Inventory — Categories]
-      summary: Update a category
-      description: ORG_ADMIN and ORG_SUPER_ADMIN only.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/categoryId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                  nullable: true
-      responses:
-        "200":
-          description: Category updated
-        "404":
-          description: Category not found
+    /orgs/{orgSlug}/inventory/categories/{categoryId}:
+        patch:
+            tags: [Inventory — Categories]
+            summary: Update a category
+            description: ORG_ADMIN and ORG_SUPER_ADMIN only.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/categoryId"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                description:
+                                    type: string
+                                    nullable: true
+            responses:
+                "200":
+                    description: Category updated
+                "404":
+                    description: Category not found
 
-    delete:
-      tags: [Inventory — Categories]
-      summary: Delete a category
-      description: |
-        ORG_ADMIN and ORG_SUPER_ADMIN only.
-        Fails if any products are still assigned to this category.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/categoryId"
-      responses:
-        "200":
-          description: Category deleted
-        "404":
-          description: Category not found
-        "409":
-          description: Cannot delete — products are still assigned to this category
+        delete:
+            tags: [Inventory — Categories]
+            summary: Delete a category
+            description: |
+                ORG_ADMIN and ORG_SUPER_ADMIN only.
+                Fails if any products are still assigned to this category.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/categoryId"
+            responses:
+                "200":
+                    description: Category deleted
+                "404":
+                    description: Category not found
+                "409":
+                    description: Cannot delete — products are still assigned to this category
 
-  # ─── Inventory — Products ──────────────────────────────────────────────────
+    # ─── Inventory — Products ──────────────────────────────────────────────────
 
-  /orgs/{orgSlug}/inventory/products:
-    get:
-      tags: [Inventory — Products]
-      summary: List products
-      description: |
-        Supports full-text search, category filtering, archive filtering,
-        low-stock filtering, sorting, and pagination. Results are Redis-cached.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/page"
-        - $ref: "#/components/parameters/limit"
-        - name: search
-          in: query
-          schema:
-            type: string
-          description: Search by name, SKU or description
-        - name: categoryId
-          in: query
-          schema:
-            type: string
-            format: uuid
-        - name: isArchived
-          in: query
-          schema:
-            type: string
-            enum: ["true", "false"]
-          description: Defaults to false (active products only)
-        - name: lowStockOnly
-          in: query
-          schema:
-            type: string
-            enum: ["true", "false"]
-          description: Filter to products at or below their reorder point
-        - name: sortBy
-          in: query
-          schema:
-            type: string
-            enum: [name, stockLevel, sellingPrice, createdAt]
-        - name: sortOrder
-          in: query
-          schema:
-            type: string
-            enum: [asc, desc]
-      responses:
-        "200":
-          description: Paginated product list
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/Product"
-                      meta:
-                        $ref: "#/components/schemas/PaginatedMeta"
+    /orgs/{orgSlug}/inventory/products:
+        get:
+            tags: [Inventory — Products]
+            summary: List products
+            description: |
+                Supports full-text search, category filtering, archive filtering,
+                low-stock filtering, sorting, and pagination. Results are Redis-cached.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/page"
+                - $ref: "#/components/parameters/limit"
+                - name: search
+                  in: query
+                  schema:
+                      type: string
+                  description: Search by name, SKU or description
+                - name: categoryId
+                  in: query
+                  schema:
+                      type: string
+                      format: uuid
+                - name: isArchived
+                  in: query
+                  schema:
+                      type: string
+                      enum: ["true", "false"]
+                  description: Defaults to false (active products only)
+                - name: lowStockOnly
+                  in: query
+                  schema:
+                      type: string
+                      enum: ["true", "false"]
+                  description: Filter to products at or below their reorder point
+                - name: sortBy
+                  in: query
+                  schema:
+                      type: string
+                      enum: [name, stockLevel, sellingPrice, createdAt]
+                - name: sortOrder
+                  in: query
+                  schema:
+                      type: string
+                      enum: [asc, desc]
+            responses:
+                "200":
+                    description: Paginated product list
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/Product"
+                                          meta:
+                                              $ref: "#/components/schemas/PaginatedMeta"
 
-    post:
-      tags: [Inventory — Products]
-      summary: Create a product
-      description: |
-        ORG_ADMIN and ORG_SUPER_ADMIN only.
-        If `initialStock > 0`, an opening `IN` stock movement is recorded automatically.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [name, sku, costPrice, sellingPrice]
-              properties:
-                name:
-                  type: string
-                  minLength: 2
-                description:
-                  type: string
-                sku:
-                  type: string
-                  description: Auto-uppercased. Must be unique within the org.
-                  example: PROD-001
-                categoryId:
-                  type: string
-                  format: uuid
-                costPrice:
-                  type: number
-                  minimum: 0.01
-                sellingPrice:
-                  type: number
-                  minimum: 0.01
-                initialStock:
-                  type: integer
-                  minimum: 0
-                  default: 0
-                reorderPoint:
-                  type: integer
-                  minimum: 0
-                  description: Low-stock threshold. Null = no alerting.
-                unit:
-                  type: string
-                  default: units
-      responses:
-        "201":
-          description: Product created
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          product:
-                            $ref: "#/components/schemas/Product"
-        "409":
-          description: SKU already exists in this organization
+        post:
+            tags: [Inventory — Products]
+            summary: Create a product
+            description: |
+                ORG_ADMIN and ORG_SUPER_ADMIN only.
+                If `initialStock > 0`, an opening `IN` stock movement is recorded automatically.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [name, sku, costPrice, sellingPrice]
+                            properties:
+                                name:
+                                    type: string
+                                    minLength: 2
+                                description:
+                                    type: string
+                                sku:
+                                    type: string
+                                    description: Auto-uppercased. Must be unique within the org.
+                                    example: PROD-001
+                                categoryId:
+                                    type: string
+                                    format: uuid
+                                costPrice:
+                                    type: number
+                                    minimum: 0.01
+                                sellingPrice:
+                                    type: number
+                                    minimum: 0.01
+                                initialStock:
+                                    type: integer
+                                    minimum: 0
+                                    default: 0
+                                reorderPoint:
+                                    type: integer
+                                    minimum: 0
+                                    description: Low-stock threshold. Null = no alerting.
+                                unit:
+                                    type: string
+                                    default: units
+            responses:
+                "201":
+                    description: Product created
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  product:
+                                                      $ref: "#/components/schemas/Product"
+                "409":
+                    description: SKU already exists in this organization
 
-  /orgs/{orgSlug}/inventory/products/{productId}:
-    get:
-      tags: [Inventory — Products]
-      summary: Get a product
-      description: Result is Redis-cached per product ID.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/productId"
-      responses:
-        "200":
-          description: Product details
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          product:
-                            $ref: "#/components/schemas/Product"
-        "404":
-          description: Product not found
+    /orgs/{orgSlug}/inventory/products/{productId}:
+        get:
+            tags: [Inventory — Products]
+            summary: Get a product
+            description: Result is Redis-cached per product ID.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/productId"
+            responses:
+                "200":
+                    description: Product details
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  product:
+                                                      $ref: "#/components/schemas/Product"
+                "404":
+                    description: Product not found
 
-    patch:
-      tags: [Inventory — Products]
-      summary: Update a product
-      description: |
-        ORG_ADMIN and ORG_SUPER_ADMIN only.
-        Cannot update an archived product.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/productId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                description:
-                  type: string
-                  nullable: true
-                categoryId:
-                  type: string
-                  format: uuid
-                  nullable: true
-                costPrice:
-                  type: number
-                sellingPrice:
-                  type: number
-                reorderPoint:
-                  type: integer
-                  nullable: true
-                unit:
-                  type: string
-      responses:
-        "200":
-          description: Product updated
-        "404":
-          description: Product not found
-        "409":
-          description: Product is archived
+        patch:
+            tags: [Inventory — Products]
+            summary: Update a product
+            description: |
+                ORG_ADMIN and ORG_SUPER_ADMIN only.
+                Cannot update an archived product.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/productId"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            properties:
+                                name:
+                                    type: string
+                                description:
+                                    type: string
+                                    nullable: true
+                                categoryId:
+                                    type: string
+                                    format: uuid
+                                    nullable: true
+                                costPrice:
+                                    type: number
+                                sellingPrice:
+                                    type: number
+                                reorderPoint:
+                                    type: integer
+                                    nullable: true
+                                unit:
+                                    type: string
+            responses:
+                "200":
+                    description: Product updated
+                "404":
+                    description: Product not found
+                "409":
+                    description: Product is archived
 
-  /orgs/{orgSlug}/inventory/products/{productId}/archive:
-    patch:
-      tags: [Inventory — Products]
-      summary: Archive a product
-      description: |
-        Soft-delete. The product is hidden from default queries
-        but all stock movements and history are preserved.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/productId"
-      responses:
-        "200":
-          description: Product archived
-        "409":
-          description: Product is already archived
+    /orgs/{orgSlug}/inventory/products/{productId}/archive:
+        patch:
+            tags: [Inventory — Products]
+            summary: Archive a product
+            description: |
+                Soft-delete. The product is hidden from default queries
+                but all stock movements and history are preserved.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/productId"
+            responses:
+                "200":
+                    description: Product archived
+                "409":
+                    description: Product is already archived
 
-  /orgs/{orgSlug}/inventory/products/{productId}/restore:
-    patch:
-      tags: [Inventory — Products]
-      summary: Restore an archived product
-      description: ORG_SUPER_ADMIN only.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/productId"
-      responses:
-        "200":
-          description: Product restored
-        "409":
-          description: Product is not archived
+    /orgs/{orgSlug}/inventory/products/{productId}/restore:
+        patch:
+            tags: [Inventory — Products]
+            summary: Restore an archived product
+            description: ORG_SUPER_ADMIN only.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/productId"
+            responses:
+                "200":
+                    description: Product restored
+                "409":
+                    description: Product is not archived
 
-  # ─── Inventory — Stock ─────────────────────────────────────────────────────
+    # ─── Inventory — Stock ─────────────────────────────────────────────────────
 
-  /orgs/{orgSlug}/inventory/products/{productId}/adjust:
-    post:
-      tags: [Inventory — Stock]
-      summary: Adjust stock level
-      description: |
-        Records an `IN` or `OUT` stock movement and atomically updates
-        the product's cached `stockLevel`. Stock can never go below zero —
-        an OUT that would cause a negative balance returns 422.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/productId"
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [type, quantity, reason]
-              properties:
-                type:
-                  type: string
-                  enum: [IN, OUT]
-                quantity:
-                  type: integer
-                  minimum: 1
-                reason:
-                  type: string
-                  minLength: 3
-                  example: Restocked from supplier PO-2024-001
-                referenceId:
-                  type: string
-                  description: Optional link to a Sale ID, PO number, etc.
-      responses:
-        "201":
-          description: Stock adjusted successfully
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: object
-                        properties:
-                          movement:
-                            $ref: "#/components/schemas/StockMovement"
-        "409":
-          description: Product is archived
-        "422":
-          description: Insufficient stock for OUT adjustment
+    /orgs/{orgSlug}/inventory/products/{productId}/adjust:
+        post:
+            tags: [Inventory — Stock]
+            summary: Adjust stock level
+            description: |
+                Records an `IN` or `OUT` stock movement and atomically updates
+                the product's cached `stockLevel`. Stock can never go below zero —
+                an OUT that would cause a negative balance returns 422.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/productId"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [type, quantity, reason]
+                            properties:
+                                type:
+                                    type: string
+                                    enum: [IN, OUT]
+                                quantity:
+                                    type: integer
+                                    minimum: 1
+                                reason:
+                                    type: string
+                                    minLength: 3
+                                    example: Restocked from supplier PO-2024-001
+                                referenceId:
+                                    type: string
+                                    description: Optional link to a Sale ID, PO number, etc.
+            responses:
+                "201":
+                    description: Stock adjusted successfully
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  movement:
+                                                      $ref: "#/components/schemas/StockMovement"
+                "409":
+                    description: Product is archived
+                "422":
+                    description: Insufficient stock for OUT adjustment
 
-  /orgs/{orgSlug}/inventory/products/{productId}/movements:
-    get:
-      tags: [Inventory — Stock]
-      summary: Get stock movement history
-      description: Paginated, immutable ledger for a product. Filterable by type.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - $ref: "#/components/parameters/productId"
-        - $ref: "#/components/parameters/page"
-        - $ref: "#/components/parameters/limit"
-        - name: type
-          in: query
-          schema:
-            type: string
-            enum: [IN, OUT]
-      responses:
-        "200":
-          description: Paginated stock movement history
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/StockMovement"
-                      meta:
-                        $ref: "#/components/schemas/PaginatedMeta"
+    /orgs/{orgSlug}/inventory/products/{productId}/movements:
+        get:
+            tags: [Inventory — Stock]
+            summary: Get stock movement history
+            description: Paginated, immutable ledger for a product. Filterable by type.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/productId"
+                - $ref: "#/components/parameters/page"
+                - $ref: "#/components/parameters/limit"
+                - name: type
+                  in: query
+                  schema:
+                      type: string
+                      enum: [IN, OUT]
+            responses:
+                "200":
+                    description: Paginated stock movement history
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/StockMovement"
+                                          meta:
+                                              $ref: "#/components/schemas/PaginatedMeta"
 
-  # ─── Inventory — Insights ──────────────────────────────────────────────────
+    # ─── Inventory — Insights ──────────────────────────────────────────────────
 
-  /orgs/{orgSlug}/inventory/alerts:
-    get:
-      tags: [Inventory — Insights]
-      summary: Get low-stock alerts
-      description: |
-        Returns all active products whose `stockLevel` is at or below
-        their `reorderPoint`. Only products with a `reorderPoint` set
-        are included. Sorted by most critical first (lowest stock).
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-      responses:
-        "200":
-          description: Low-stock products
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/Product"
+    /orgs/{orgSlug}/inventory/alerts:
+        get:
+            tags: [Inventory — Insights]
+            summary: Get low-stock alerts
+            description: |
+                Returns all active products whose `stockLevel` is at or below
+                their `reorderPoint`. Only products with a `reorderPoint` set
+                are included. Sorted by most critical first (lowest stock).
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            responses:
+                "200":
+                    description: Low-stock products
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/Product"
 
-  /orgs/{orgSlug}/inventory/forecast:
-    get:
-      tags: [Inventory — Insights]
-      summary: Get smart stockout forecast
-      description: |
-        Computes a stockout forecast for each product using a moving-average
-        sales velocity algorithm:
+    /orgs/{orgSlug}/inventory/forecast:
+        get:
+            tags: [Inventory — Insights]
+            summary: Get smart stockout forecast
+            description: |
+                Computes a stockout forecast for each product using a moving-average
+                sales velocity algorithm:
 
-        1. Sum all `OUT` movements within the analysis window
-        2. `avgDailySalesVelocity = totalOut / windowDays`
-        3. `daysUntilStockout = currentStock / avgDailySalesVelocity`
-        4. `estimatedStockoutDate = today + daysUntilStockout`
+                1. Sum all `OUT` movements within the analysis window
+                2. `avgDailySalesVelocity = totalOut / windowDays`
+                3. `daysUntilStockout = currentStock / avgDailySalesVelocity`
+                4. `estimatedStockoutDate = today + daysUntilStockout`
 
-        Results are Redis-cached for 10 minutes.
-        **ORG_ADMIN and ORG_SUPER_ADMIN only** — business-sensitive data.
-      security:
-        - OrgBearerAuth: []
-      parameters:
-        - $ref: "#/components/parameters/orgSlug"
-        - name: windowDays
-          in: query
-          schema:
-            type: integer
-            minimum: 1
-            maximum: 365
-            default: 30
-          description: How many days of OUT history to use for velocity calculation
-        - name: lowStockOnly
-          in: query
-          schema:
-            type: string
-            enum: ["true", "false"]
-          description: If true, returns only products that are already low-stock
-      responses:
-        "200":
-          description: Stockout forecasts for all (or low-stock) products
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: "#/components/schemas/SuccessResponse"
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: "#/components/schemas/ForecastItem"
+                Results are Redis-cached for 10 minutes.
+                **ORG_ADMIN and ORG_SUPER_ADMIN only** — business-sensitive data.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - name: windowDays
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 365
+                      default: 30
+                  description: How many days of OUT history to use for velocity calculation
+                - name: lowStockOnly
+                  in: query
+                  schema:
+                      type: string
+                      enum: ["true", "false"]
+                  description: If true, returns only products that are already low-stock
+            responses:
+                "200":
+                    description: Stockout forecasts for all (or low-stock) products
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/ForecastItem"
+
+    # ─── Sales ────────────────────────────────────────────────────────────────────
+
+    /orgs/{orgSlug}/sales:
+        post:
+            tags: [Sales]
+            summary: Create a new sale
+            description: |
+                Any authenticated org user can raise a sale.
+
+                Each line item captures the product's **current sellingPrice** as a
+                snapshot — price changes after this point do not affect the record.
+
+                The sale is created in **PENDING** status. Stock is **not** deducted
+                until a manager approves it.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [items]
+                            properties:
+                                items:
+                                    type: array
+                                    minItems: 1
+                                    items:
+                                        type: object
+                                        required: [productId, quantity]
+                                        properties:
+                                            productId:
+                                                type: string
+                                                format: uuid
+                                            quantity:
+                                                type: integer
+                                                minimum: 1
+                                            lineDiscount:
+                                                type: number
+                                                minimum: 0
+                                                default: 0
+                                discountAmount:
+                                    type: number
+                                    minimum: 0
+                                    default: 0
+                                    description: Sale-level discount applied to the subtotal
+                                taxRate:
+                                    type: number
+                                    minimum: 0
+                                    maximum: 100
+                                    default: 0
+                                    description: Tax percentage applied after discount
+                                notes:
+                                    type: string
+                                    maxLength: 500
+            responses:
+                "201":
+                    description: Sale created — awaiting approval
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  sale:
+                                                      $ref: "#/components/schemas/Sale"
+                "404":
+                    description: One or more products not found or archived
+                "422":
+                    description: Line discount exceeds line total or sale discount exceeds subtotal
+
+        get:
+            tags: [Sales]
+            summary: List sales
+            description: |
+                `ORG_USER` sees only their own sales.
+                `ORG_ADMIN` and `ORG_SUPER_ADMIN` see all sales with filtering.
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - $ref: "#/components/parameters/page"
+                - $ref: "#/components/parameters/limit"
+                - name: status
+                  in: query
+                  schema:
+                      type: string
+                      enum: [PENDING, APPROVED, COMPLETED, CANCELLED]
+                - name: createdById
+                  in: query
+                  schema:
+                      type: string
+                      format: uuid
+                  description: Filter by creator (managers only)
+                - name: dateFrom
+                  in: query
+                  schema:
+                      type: string
+                      format: date-time
+                - name: dateTo
+                  in: query
+                  schema:
+                      type: string
+                      format: date-time
+            responses:
+                "200":
+                    description: Paginated list of sales
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: array
+                                              items:
+                                                  $ref: "#/components/schemas/SaleSummary"
+                                          meta:
+                                              $ref: "#/components/schemas/PaginatedMeta"
+
+    /orgs/{orgSlug}/sales/summary:
+        get:
+            tags: [Sales]
+            summary: Get sales summary / dashboard report
+            description: |
+                Aggregated revenue metrics for reporting dashboards.
+                Only counts **APPROVED** and **COMPLETED** sales for revenue figures.
+                **ORG_ADMIN and ORG_SUPER_ADMIN only.**
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - name: dateFrom
+                  in: query
+                  schema:
+                      type: string
+                      format: date-time
+                - name: dateTo
+                  in: query
+                  schema:
+                      type: string
+                      format: date-time
+                - name: topProductsLimit
+                  in: query
+                  schema:
+                      type: integer
+                      minimum: 1
+                      maximum: 20
+                      default: 5
+                  description: Number of top-selling products to return
+            responses:
+                "200":
+                    description: Sales summary
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  summary:
+                                                      $ref: "#/components/schemas/SalesSummary"
+
+    /orgs/{orgSlug}/sales/{saleId}:
+        get:
+            tags: [Sales]
+            summary: Get a sale (full detail)
+            description: "`ORG_USER` can only view their own sales."
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - name: saleId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+            responses:
+                "200":
+                    description: Full sale detail with line items
+                    content:
+                        application/json:
+                            schema:
+                                allOf:
+                                    - $ref: "#/components/schemas/SuccessResponse"
+                                    - type: object
+                                      properties:
+                                          data:
+                                              type: object
+                                              properties:
+                                                  sale:
+                                                      $ref: "#/components/schemas/Sale"
+                "403":
+                    description: ORG_USER attempting to view another user's sale
+                "404":
+                    description: Sale not found
+
+    /orgs/{orgSlug}/sales/{saleId}/approve:
+        patch:
+            tags: [Sales]
+            summary: Approve a sale — commits stock
+            description: |
+                Transitions the sale from **PENDING** → **APPROVED**.
+
+                For each line item an **OUT** `StockMovement` is created atomically.
+                If any product has insufficient stock the entire operation rolls back
+                and the sale remains **PENDING**.
+
+                **ORG_ADMIN and ORG_SUPER_ADMIN only.**
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - name: saleId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+            responses:
+                "200":
+                    description: Sale approved — stock committed
+                "409":
+                    description: Sale is not in PENDING status
+                "422":
+                    description: Insufficient stock for one or more line items
+
+    /orgs/{orgSlug}/sales/{saleId}/complete:
+        patch:
+            tags: [Sales]
+            summary: Complete an approved sale
+            description: |
+                Transitions the sale from **APPROVED** → **COMPLETED** (final state).
+                No stock changes — stock was already committed on approval.
+
+                **ORG_ADMIN and ORG_SUPER_ADMIN only.**
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - name: saleId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+            responses:
+                "200":
+                    description: Sale completed
+                "409":
+                    description: Sale is not in APPROVED status
+
+    /orgs/{orgSlug}/sales/{saleId}/cancel:
+        patch:
+            tags: [Sales]
+            summary: Cancel a sale
+            description: |
+                Cancels a **PENDING** or **APPROVED** sale.
+
+                - **PENDING** → cancelled with no stock impact.
+                - **APPROVED** → cancelled and stock is **returned** via IN movements
+                  for each line item.
+                - **COMPLETED** sales cannot be cancelled — create a return/refund instead.
+
+                **ORG_ADMIN and ORG_SUPER_ADMIN only.**
+            security:
+                - OrgBearerAuth: []
+            parameters:
+                - $ref: "#/components/parameters/orgSlug"
+                - name: saleId
+                  in: path
+                  required: true
+                  schema:
+                      type: string
+                      format: uuid
+            requestBody:
+                required: true
+                content:
+                    application/json:
+                        schema:
+                            type: object
+                            required: [cancellationNote]
+                            properties:
+                                cancellationNote:
+                                    type: string
+                                    minLength: 3
+                                    example: Customer changed mind before delivery
+            responses:
+                "200":
+                    description: Sale cancelled
+                "409":
+                    description: Sale is already cancelled or is COMPLETED

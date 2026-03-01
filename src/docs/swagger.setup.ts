@@ -12,9 +12,6 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
  *
  * Docs are served at: GET /api/v1/docs
  * Raw spec is at:     GET /api/v1/docs/spec
- *
- * In production you may want to gate this behind an IP allowlist
- * or remove it entirely. Control via the NODE_ENV guard below.
  */
 export function setupSwagger(app: Express): void {
   try {

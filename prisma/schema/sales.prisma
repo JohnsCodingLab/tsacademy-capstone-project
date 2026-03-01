@@ -1,0 +1,77 @@
+model Sale {
+    id             String       @id @default(uuid())
+    organizationId String
+    organization   Organization @relation(fields: [organizationId], references: [id])
+
+    // Who raised the sale
+    createdById String
+    createdBy   OrgUser @relation("SalesCreated", fields: [createdById], references: [id])
+
+    // Who approved/cancelled/completed it (nullable — may not have happened yet)
+    processedById String?
+    processedBy   OrgUser? @relation("SalesProcessed", fields: [processedById], references: [id])
+
+    status SaleStatus @default(PENDING)
+
+    // Financials — all stored at creation time
+    subtotal       Decimal @db.Decimal(14, 2) // sum of all line totals before discount/tax
+    discountAmount Decimal @default(0) @db.Decimal(14, 2)
+    taxAmount      Decimal @default(0) @db.Decimal(14, 2)
+    totalAmount    Decimal @db.Decimal(14, 2) // subtotal - discount + tax
+
+    // Optional human-readable notes (e.g. "Walk-in customer", "PO-2024-007")
+    notes String?
+
+    // Populated when sale transitions to APPROVED
+    approvedAt DateTime?
+
+    // Populated when sale transitions to CANCELLED
+    cancelledAt      DateTime?
+    cancellationNote String?
+
+    items SaleItem[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([organizationId])
+    @@index([organizationId, status])
+    @@index([organizationId, createdAt])
+    @@index([createdById])
+}
+
+// ─── SaleItem ─────────────────────────────────────────────────────────────────
+//
+// Individual line on a Sale. Immutable after the sale is approved.
+//
+// `unitPrice` = the product's sellingPrice AT THE TIME OF THE SALE.
+//              Never read from the Product table after creation.
+// `lineTotal`  = (unitPrice * quantity) - lineDiscount. Stored, not computed.
+
+model SaleItem {
+    id     String @id @default(uuid())
+    saleId String
+    sale   Sale   @relation(fields: [saleId], references: [id])
+
+    productId String
+    product   Product @relation(fields: [productId], references: [id])
+
+    quantity     Int
+    unitPrice    Decimal @db.Decimal(12, 2) // snapshot of price at sale time
+    lineDiscount Decimal @default(0) @db.Decimal(12, 2)
+    lineTotal    Decimal @db.Decimal(12, 2) // (unitPrice * quantity) - lineDiscount
+
+    createdAt DateTime @default(now())
+
+    @@index([saleId])
+    @@index([productId])
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum SaleStatus {
+    PENDING
+    APPROVED
+    COMPLETED
+    CANCELLED
+}

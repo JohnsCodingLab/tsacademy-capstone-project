@@ -20,6 +20,9 @@ model OrgUser {
   activities     UserActivity[]
   stockMovements StockMovement[]
 
+  salesCreated   Sale[] @relation("SalesCreated")
+  salesProcessed Sale[] @relation("SalesProcessed")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

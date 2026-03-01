@@ -23,7 +23,7 @@ import {
   changePassword,
 } from "./orgUser.controller.js";
 import type { OrgRole } from "@/generated/prisma/index.js";
-import { requireOrgAccess } from "@/middlewares/orgAccess..middleware.js";
+import { requireOrgAccess } from "@/middlewares/orgAccess.middleware.js";
 
 const router = Router({ mergeParams: true }); // mergeParams so :orgSlug is visible here
 

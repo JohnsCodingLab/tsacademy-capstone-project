@@ -1,17 +1,21 @@
 export interface OrgRouteParams {
-  orgSlug: string;
+    orgSlug: string;
 }
 
 export interface SysUserParams {
-  userId: string;
+    userId: string;
 }
 
 export interface OrgUserParams extends Record<string, string> {
-  orgSlug: string;
-  userId: string;
+    orgSlug: string;
+    userId: string;
 }
 
 export interface InventoryParams extends Record<string, string> {
-  categoryId: string;
-  productId: string;
+    categoryId: string;
+    productId: string;
+}
+
+export interface SaleParams extends Record<string, string> {
+    saleId: string;
 }

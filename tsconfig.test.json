@@ -1,0 +1,11 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        // ts-jest does not support verbatimModuleSyntax — must be off for tests
+        "verbatimModuleSyntax": false,
+        // ts-jest needs CommonJS-friendly module output when transpiling
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext"
+    },
+    "include": ["src/**/*"]
+}

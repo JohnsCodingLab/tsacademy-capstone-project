@@ -32,7 +32,7 @@ import {
   getLowStockAlerts,
   getForecast,
 } from "./inventory.controller.js";
-import { requireOrgAccess } from "@/middlewares/orgAccess..middleware.js";
+import { requireOrgAccess } from "@/middlewares/orgAccess.middleware.js";
 
 const router = Router({ mergeParams: true });
 
