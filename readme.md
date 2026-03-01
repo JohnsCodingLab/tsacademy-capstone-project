@@ -400,6 +400,10 @@ All tests run **in-process with mocked infrastructure** — no database, no Redi
 
 ---
 
+## Contibutors
+Levi John Favour
+Aboh James Ebim
+
 ## 📄 License
 
 ISC
